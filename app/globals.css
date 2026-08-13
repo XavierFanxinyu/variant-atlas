@@ -102,6 +102,92 @@ button:disabled { opacity: .38; cursor: not-allowed; }
 .sources-panel li { margin: 10px 0; }
 .sources-panel p { color: var(--muted); font-size: 12px; }
 
+.evidence-page { padding: 65px max(3.5vw, 28px) 80px; }
+.evidence-hero { display: grid; grid-template-columns: 1fr 400px; gap: 60px; align-items: end; }
+.evidence-hero h1 { margin: 15px 0; font: 500 clamp(48px, 5vw, 72px)/1.08 Georgia, "Songti SC", serif; }
+.evidence-hero p { color: var(--muted); max-width: 850px; line-height: 1.8; }
+.evidence-counts { display: grid; grid-template-columns: repeat(3,1fr); border: 1px solid var(--line); background: var(--panel); }
+.evidence-counts span { padding: 20px 15px; color: var(--muted); font-size: 10px; text-align: center; border-right: 1px solid var(--line); }
+.evidence-counts span:last-child { border-right: 0; }
+.evidence-counts b { display: block; color: var(--green); font: 500 32px Georgia, serif; margin-bottom: 6px; }
+.evidence-alert { display: grid; grid-template-columns: 120px 1fr; align-items: center; gap: 20px; margin: 35px 0 18px; padding: 18px 22px; background: var(--ink); color: white; }
+.evidence-alert b { color: var(--lime); }
+.evidence-alert p { margin: 0; color: #c6d0cc; line-height: 1.7; }
+.rule-toolbar { display: grid; grid-template-columns: minmax(250px, 1fr) auto auto; gap: 20px; align-items: end; padding: 20px; border: 1px solid var(--line); background: #ebeae4; }
+.rule-toolbar label span, .rule-toolbar > div > span { display: block; margin-bottom: 8px; color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .1em; }
+.rule-toolbar input { width: 100%; padding: 10px 12px; border: 1px solid var(--line); background: var(--panel); outline: none; }
+.rule-toolbar button { border: 1px solid var(--line); background: var(--panel); padding: 9px 11px; cursor: pointer; font-size: 11px; }
+.rule-toolbar button.active { background: var(--green); color: white; border-color: var(--green); }
+.rule-handbook { display: grid; grid-template-columns: 390px minmax(0,1fr); min-height: 720px; border: 1px solid var(--line); border-top: 0; background: var(--panel); }
+.rule-list { background: #efeee8; border-right: 1px solid var(--line); max-height: 790px; overflow-y: auto; }
+.rule-list-head { display: flex; justify-content: space-between; padding: 17px 18px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+.rule-list > button { display: grid; grid-template-columns: 70px 1fr 27px; gap: 10px; align-items: center; width: 100%; padding: 15px 17px; border: 0; border-bottom: 1px solid var(--line); background: transparent; text-align: left; cursor: pointer; }
+.rule-list > button:hover { background: #f8f7f2; }
+.rule-list > button.active { background: var(--panel); box-shadow: inset 5px 0 var(--green); }
+.rule-list > button > span { font: 700 17px Georgia, serif; }
+.rule-list > button.pathogenic > span { color: #93492b; }
+.rule-list > button.benign > span { color: var(--green); }
+.rule-list button b, .rule-list button small { display: block; }
+.rule-list button b { font-size: 12px; }
+.rule-list button small { margin-top: 4px; color: var(--muted); font-size: 9px; }
+.rule-list button i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #dcded7; color: var(--muted); font-size: 9px; font-style: normal; }
+.rule-list button.active i { background: var(--lime); color: var(--ink); }
+.rule-detail { padding: clamp(30px, 4vw, 60px); }
+.detail-top { display: flex; justify-content: space-between; align-items: center; }
+.detail-top > div { display: flex; gap: 7px; }
+.detail-top span { padding: 6px 9px; border-radius: 20px; background: #e8e9e3; color: var(--muted); font-size: 10px; }
+.detail-top .direction.pathogenic { background: #f3ded3; color: #8b3c22; }
+.detail-top .direction.benign { background: #dcebdc; color: var(--green); }
+.detail-top > b { color: var(--orange); font-size: 10px; }
+.rule-detail > h1 { display: flex; align-items: baseline; gap: 18px; margin: 40px 0 35px; font: 500 clamp(31px, 4vw, 48px) Georgia, "Songti SC", serif; }
+.rule-detail > h1 span { color: var(--green); font-size: 25px; }
+.rule-detail > section { padding: 22px 0; border-top: 1px solid var(--line); }
+.rule-detail > section > span { color: var(--muted); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.rule-detail > section p { margin: 9px 0 0; line-height: 1.9; }
+.rule-detail .current-guidance { margin: 8px -20px 0; padding: 22px 20px; background: #e8f0e9; border: 0; }
+.rule-detail .current-guidance > span { color: var(--green); }
+.rule-detail .pitfall-guidance { margin: 10px -20px 0; padding: 22px 20px; background: #f5e6dc; border: 0; }
+.rule-detail .pitfall-guidance > span { color: #9a4f2e; }
+.detail-source { display: grid; grid-template-columns: 95px 1fr auto; align-items: center; gap: 12px; margin-top: 25px; padding-top: 18px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+.detail-source b { color: var(--ink); font-size: 11px; }
+.detail-actions { display: flex; justify-content: space-between; align-items: center; margin-top: 27px; }
+.detail-actions a { color: var(--green); font-weight: 700; font-size: 12px; }
+.combination-panel { display: grid; grid-template-columns: 330px 1fr; gap: 35px; margin-top: 50px; padding: 35px; background: var(--ink); color: white; }
+.combination-panel h2 { margin: 10px 0; font: 500 31px Georgia, "Songti SC", serif; }
+.combination-panel > div:first-child p { color: #aebbb5; line-height: 1.7; }
+.combination-panel > div:last-child { display: grid; gap: 7px; }
+.combination-panel article { display: grid; grid-template-columns: 100px 1fr; gap: 15px; padding: 13px 16px; background: #22312c; }
+.combination-panel article b { color: var(--lime); }
+.combination-panel article p { margin: 0; color: #c4cec9; line-height: 1.6; font-size: 12px; }
+.evidence-workbench { display: grid; grid-template-columns: 360px 1fr; gap: 30px; margin-top: 28px; padding: 30px; border: 1px solid var(--line); background: var(--panel); }
+.workbench-intro h2 { margin: 10px 0; font: 500 30px Georgia, "Songti SC", serif; }
+.workbench-intro > p { color: var(--muted); line-height: 1.75; }
+.workbench-intro > button { border: 0; padding: 0; background: none; color: var(--green); cursor: pointer; font-weight: 700; }
+.workbench-result { margin: 22px 0 14px; padding: 20px; background: #eeeee8; border-left: 4px solid #999; }
+.workbench-result.pathogenic { border-color: #93492b; background: #f3e3da; }
+.workbench-result.likely-pathogenic { border-color: var(--orange); background: #f7e9dc; }
+.workbench-result.benign { border-color: var(--green); background: #deecdf; }
+.workbench-result.likely-benign { border-color: #78a55e; background: #e7f0e2; }
+.workbench-result.vus { border-color: #8b8174; }
+.workbench-result span { color: var(--muted); font-size: 10px; }
+.workbench-result strong { display: block; margin: 5px 0; font: 500 26px Georgia, "Songti SC", serif; }
+.workbench-result p { margin: 0; line-height: 1.6; font-size: 12px; }
+.workbench-codes { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; align-content: start; }
+.workbench-codes button { min-height: 65px; padding: 11px; border: 1px solid var(--line); background: #f4f3ee; text-align: left; cursor: pointer; }
+.workbench-codes button.pathogenic b { color: #93492b; }
+.workbench-codes button.benign b { color: var(--green); }
+.workbench-codes button.selected { background: var(--ink); color: white; border-color: var(--ink); }
+.workbench-codes button.selected b { color: var(--lime); }
+.workbench-codes button b, .workbench-codes button span { display: block; }
+.workbench-codes button span { margin-top: 6px; color: var(--muted); font-size: 9px; }
+.workbench-codes button.selected span { color: #b9c4bf; }
+.revision-map { margin-top: 50px; }
+.revision-map > h2 { font: 500 31px Georgia, "Songti SC", serif; }
+.revision-map > div { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.revision-map article { padding: 22px; border: 1px solid var(--line); background: var(--panel); }
+.revision-map article b { color: var(--green); }
+.revision-map article p { color: var(--muted); line-height: 1.7; }
+
 .course-workspace { display: grid; grid-template-columns: 330px minmax(0, 1fr); min-height: calc(100vh - 76px); }
 .course-index { padding: 48px 30px; background: #e9e8e2; border-right: 1px solid var(--line); }
 .course-index h1 { margin: 10px 0 5px; font: 500 34px Georgia, "Songti SC", serif; }
@@ -264,6 +350,12 @@ footer span:last-child { text-align: right; }
   .hero-grid { grid-template-columns: 1fr; padding: 60px 28px; }
   .metrics { grid-template-columns: repeat(2, 1fr); }
   .module-grid, .rule-grid { grid-template-columns: repeat(2, 1fr); }
+  .evidence-hero { grid-template-columns: 1fr; }
+  .rule-toolbar { grid-template-columns: 1fr; }
+  .rule-handbook { grid-template-columns: 300px 1fr; }
+  .combination-panel { grid-template-columns: 1fr; }
+  .evidence-workbench { grid-template-columns: 1fr; }
+  .revision-map > div { grid-template-columns: repeat(2,1fr); }
   .dashboard-tools { grid-template-columns: 1fr; }
   .course-workspace { grid-template-columns: 1fr; }
   .course-index { position: relative; }
@@ -287,6 +379,15 @@ footer span:last-child { text-align: right; }
   .hero-actions, .case-actions { flex-wrap: wrap; }
   .metrics, .module-grid, .rule-grid, .hpo-grid, .choice-row, .evidence-picker, .three-levels { grid-template-columns: 1fr; }
   .lesson-reader { width: calc(100% - 40px); }
+  .evidence-page { padding-left: 15px; padding-right: 15px; }
+  .evidence-counts { grid-template-columns: 1fr; }
+  .evidence-alert { grid-template-columns: 1fr; }
+  .rule-handbook { grid-template-columns: 1fr; }
+  .rule-list { max-height: 420px; border-right: 0; border-bottom: 1px solid var(--line); }
+  .detail-source { grid-template-columns: 1fr; }
+  .revision-map > div { grid-template-columns: 1fr; }
+  .combination-panel article { grid-template-columns: 1fr; }
+  .workbench-codes { grid-template-columns: repeat(2,1fr); }
   .mistake-list article { grid-template-columns: 50px 1fr; }
   .mistake-list article button { grid-column: 2; text-align: left; }
   .section-block, .page-section, .case-main { padding-left: 20px; padding-right: 20px; }
