@@ -67,7 +67,7 @@ button:disabled { opacity: .38; cursor: not-allowed; }
 .section-heading h2 { margin: 7px 0 0; font: 500 38px Georgia, "Songti SC", serif; }
 .section-heading p { color: var(--muted); justify-self: end; max-width: 520px; line-height: 1.75; }
 .module-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
-.module-card { min-height: 200px; border: 1px solid var(--line); background: rgba(255,255,255,.48); padding: 23px; transition: .2s ease; }
+.module-card { min-height: 200px; width: 100%; border: 1px solid var(--line); background: rgba(255,255,255,.48); padding: 23px; text-align: left; color: inherit; font: inherit; transition: .2s ease; }
 .module-action { cursor: pointer; }
 .module-card:hover { transform: translateY(-3px); background: white; box-shadow: 0 16px 45px rgba(20,55,43,.07); }
 .module-no { font: 500 13px Georgia, serif; color: var(--orange); }
@@ -327,6 +327,42 @@ textarea:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(25,93,73
 .score-card small { color: #b5c1bc; }
 .score-card p { color: #9facA6; font-size: 11px; }
 
+.synthetic-badge { margin: 20px 0 8px; padding: 14px 16px; border: 1px solid #53615b; background: rgba(255,255,255,.04); }
+.synthetic-badge b { display: block; margin-bottom: 5px; color: var(--lime); font-size: 10px; letter-spacing: .12em; }
+.synthetic-badge span { color: #b6c0bc; font-size: 11px; line-height: 1.6; }
+.differential-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; }
+.differential-grid article { padding: 22px; border: 1px solid var(--line); background: var(--panel); }
+.differential-grid article span { color: var(--orange); font: 500 24px Georgia, serif; }
+.differential-grid article b { display: block; margin: 18px 0 8px; }
+.differential-grid article p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.allele-pair { display: grid; grid-template-columns: 1fr 54px 1fr; align-items: stretch; margin-bottom: 22px; }
+.allele-pair article { padding: 23px; border: 1px solid var(--line); background: var(--panel); }
+.allele-pair article > span, .curation-head span { color: var(--green); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.allele-pair h3 { margin: 13px 0 5px; font: 500 23px Georgia, "Songti SC", serif; }
+.allele-pair p { margin: 0 0 14px; color: var(--muted); }
+.allele-pair small { display: block; min-height: 36px; color: var(--muted); font: 11px/1.5 ui-monospace,Consolas,monospace; }
+.allele-pair a, .case-sources a { display: block; margin-top: 13px; color: var(--green); font-size: 11px; font-weight: 700; text-decoration: none; }
+.phase-mark { display: grid; place-items: center; background: var(--ink); color: var(--lime); font: 500 26px Georgia,serif; }
+.dual-curation { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; }
+.dual-curation > article { min-width: 0; padding: 22px; border: 1px solid var(--line); background: var(--panel); }
+.curation-head b { display: block; margin: 8px 0 14px; font: 500 19px Georgia,"Songti SC",serif; }
+.dual-curation article > p { min-height: 84px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+.dual-curation .choice-row { grid-template-columns: repeat(2,1fr); }
+.dual-curation .choice-row button { min-height: 60px; gap: 8px; padding: 10px; }
+.dual-curation .choice-row b { min-width: 30px; height: 30px; font-size: 9px; }
+.dual-curation .choice-row span { font-size: 11px; }
+.evidence-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.evidence-chips span { padding: 5px 8px; border-radius: 20px; background: #e3eee4; color: var(--green); font: 700 10px ui-monospace,Consolas,monospace; }
+.rationale-field { display: block; margin-top: 18px; }
+.rationale-field > span { display: block; margin-bottom: 7px; color: var(--green); font-size: 11px; font-weight: 800; letter-spacing: .08em; }
+.rationale-field textarea { min-height: 150px; background: white; font-size: 13px; }
+.warning-note { background: #f4e7dd; border-color: var(--orange); }
+.warning-note b { color: #8b4b2d; }
+.case-sources { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-top: 22px; padding: 20px; border: 1px solid var(--line); background: #eeeee8; }
+.case-sources b { grid-column: 1/-1; font-size: 11px; letter-spacing: .1em; }
+.score-breakdown { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.score-breakdown span { padding: 5px 8px; border: 1px solid #52615a; border-radius: 20px; color: #dce4e0; font-size: 9px; }
+
 .level-list { display: grid; gap: 12px; max-width: 1000px; }
 .level-list article { display: grid; grid-template-columns: 90px 1fr 110px; align-items: center; padding: 25px; border: 1px solid var(--line); background: var(--panel); }
 .level-list article > span { font: 500 34px Georgia, serif; color: var(--green); }
@@ -356,6 +392,8 @@ footer span:last-child { text-align: right; }
   .combination-panel { grid-template-columns: 1fr; }
   .evidence-workbench { grid-template-columns: 1fr; }
   .revision-map > div { grid-template-columns: repeat(2,1fr); }
+  .dual-curation, .differential-grid { grid-template-columns: 1fr; }
+  .dual-curation article > p { min-height: 0; }
   .dashboard-tools { grid-template-columns: 1fr; }
   .course-workspace { grid-template-columns: 1fr; }
   .course-index { position: relative; }
@@ -393,6 +431,10 @@ footer span:last-child { text-align: right; }
   .section-block, .page-section, .case-main { padding-left: 20px; padding-right: 20px; }
   .principle-strip { margin-left: 20px; margin-right: 20px; }
   .variant-table > div { grid-template-columns: 1fr 1fr; }
+  .allele-pair { grid-template-columns: 1fr; }
+  .phase-mark { min-height: 42px; }
+  .case-sources { grid-template-columns: 1fr; }
+  .case-sources b { grid-column: auto; }
   .variant-table .head { display: none; }
   .level-list article { grid-template-columns: 70px 1fr; }
   .level-list article > b { display: none; }

@@ -4,6 +4,16 @@ import { useEffect, useMemo, useState } from "react";
 
 type View = "dashboard" | "case" | "rules" | "roadmap" | "courses" | "library" | "exam" | "mistakes";
 type CaseAnswer = { inheritance: string; evidence: string[]; classification: string; report: string };
+type PahAnswer = {
+  inheritance: string;
+  phase: string;
+  variant1Class: string;
+  variant2Class: string;
+  rationale1: string;
+  rationale2: string;
+  conclusion: string;
+  report: string;
+};
 
 const modules = [
   { no: "01", title: "表型与遗传模式", meta: "6 节 · 约 120 分钟", progress: 33 },
@@ -103,7 +113,7 @@ const lessons = [
 
 const caseLibrary = [
   { id: "001", title: "Noonan综合征", gene: "PTPN11", mode: "AD · de novo", focus: "PS2 / 功能证据 / 病例相关性", status: "开放", tone: "live", source: "ClinGen RASopathy VCEP" },
-  { id: "002", title: "苯丙酮尿症", gene: "PAH", mode: "AR · 复合杂合", focus: "PM3 / 两等位基因 / 反式", status: "证据已核查", tone: "verified", source: "ClinGen PAH VCEP" },
+  { id: "002", title: "PAH缺乏症", gene: "PAH", mode: "AR · 复合杂合", focus: "PM3 / 两等位基因 / 反式", status: "开放", tone: "live", source: "ClinGen PAH VCEP + GeneReviews" },
   { id: "003", title: "家族性高胆固醇血症", gene: "LDLR", mode: "AD · 家系", focus: "PVS1强度 / RNA / 共分离", status: "证据已核查", tone: "verified", source: "ClinGen FH VCEP" },
   { id: "004", title: "终末外显子截短变异", gene: "待选VCEP基因", mode: "AD", focus: "PVS1降级 / NMD / 转录本", status: "选例复核中", tone: "review", source: "ClinGen SVI PVS1" },
   { id: "005", title: "非经典剪接变异", gene: "待选VCEP基因", mode: "AD或AR", focus: "剪接预测 / RNA / 证据依赖", status: "选例复核中", tone: "review", source: "ClinGen SVI Splicing" },
@@ -163,12 +173,17 @@ const combinationRows = [
 
 const caseSteps = ["病例资料", "表型整理", "遗传模式", "候选比较", "证据赋值", "综合分类", "报告撰写"];
 const evidenceOptions = ["PS2_VeryStrong", "PS3", "PM2_Supporting", "PP1_Strong", "PP3", "PP4"];
+const pahSteps = ["筛查与复核", "鉴别诊断", "遗传模式", "双变异与相位", "分别判级", "病例级结论", "报告与评分"];
+const emptyPahAnswer: PahAnswer = { inheritance: "", phase: "", variant1Class: "", variant2Class: "", rationale1: "", rationale2: "", conclusion: "", report: "" };
 
 export default function LearningWorkspace() {
   const [view, setView] = useState<View>("dashboard");
   const [step, setStep] = useState(0);
   const [checked, setChecked] = useState(false);
   const [answer, setAnswer] = useState<CaseAnswer>({ inheritance: "", evidence: [], classification: "", report: "" });
+  const [activeCaseId, setActiveCaseId] = useState("001");
+  const [pahStep, setPahStep] = useState(0);
+  const [pahAnswer, setPahAnswer] = useState<PahAnswer>(emptyPahAnswer);
   const [lessonId, setLessonId] = useState("phenotype");
   const [lessonDone, setLessonDone] = useState<string[]>([]);
   const [examAnswers, setExamAnswers] = useState<number[]>(Array(examQuestions.length).fill(-1));
@@ -185,17 +200,22 @@ export default function LearningWorkspace() {
     if (saved) {
       try {
         const state = JSON.parse(saved);
+        /* eslint-disable react-hooks/set-state-in-effect -- one-time hydration of the user's local learning draft */
         setStep(state.step ?? 0);
-        setAnswer(state.answer ?? answer);
+        setAnswer(state.answer ?? { inheritance: "", evidence: [], classification: "", report: "" });
+        setActiveCaseId(state.activeCaseId ?? "001");
+        setPahStep(state.pahStep ?? 0);
+        setPahAnswer(state.pahAnswer ?? emptyPahAnswer);
         setLessonDone(state.lessonDone ?? []);
         setMistakes(state.mistakes ?? []);
+        /* eslint-enable react-hooks/set-state-in-effect */
       } catch { /* ignore a damaged local draft */ }
     }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, lessonDone, mistakes }));
-  }, [step, answer, lessonDone, mistakes]);
+    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, mistakes }));
+  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, mistakes]);
 
   const score = useMemo(() => {
     let value = 0;
@@ -206,6 +226,19 @@ export default function LearningWorkspace() {
     if (answer.report.length >= 60) value += 20;
     return Math.min(value, 100);
   }, [answer]);
+
+  const pahScore = useMemo(() => {
+    let value = 0;
+    if (pahAnswer.inheritance === "AR") value += 10;
+    if (pahAnswer.phase === "trans") value += 15;
+    if (pahAnswer.variant1Class === "Pathogenic") value += 15;
+    if (pahAnswer.variant2Class === "Likely pathogenic") value += 15;
+    if (pahAnswer.rationale1.length >= 50) value += 10;
+    if (pahAnswer.rationale2.length >= 50) value += 10;
+    if (pahAnswer.conclusion === "supports") value += 10;
+    if (pahAnswer.report.length >= 100 && pahAnswer.report.includes("PAH") && pahAnswer.report.includes("c.1222") && pahAnswer.report.includes("c.1246")) value += 15;
+    return value;
+  }, [pahAnswer]);
 
   const examScore = useMemo(() => examQuestions.reduce((total, question, index) => total + (examAnswers[index] === question.answer ? 20 : 0), 0), [examAnswers]);
 
@@ -223,6 +256,12 @@ export default function LearningWorkspace() {
   function navigate(next: View) {
     setView(next);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function openCase(id: string) {
+    setActiveCaseId(id);
+    setChecked(false);
+    navigate("case");
   }
 
   function toggleEvidence(item: string) {
@@ -260,7 +299,7 @@ export default function LearningWorkspace() {
                 <h1>把每条证据，<br />落到一个真实判断上。</h1>
                 <p>从GRCh38候选变异出发，练习表型、遗传模式、ACMG证据与报告写作。每一步先判断，再查看规范依据。</p>
                 <div className="hero-actions">
-                  <button className="primary" onClick={() => navigate("case")}>继续样板病例 <span>→</span></button>
+                  <button className="primary" onClick={() => openCase("001")}>继续样板病例 <span>→</span></button>
                   <button className="secondary" onClick={() => navigate("courses")}>进入核心课程</button>
                 </div>
               </div>
@@ -270,7 +309,7 @@ export default function LearningWorkspace() {
                 <p>新生变异 · 常染色体显性 · PTPN11</p>
                 <div className="case-meta"><span>当前进度</span><strong>{step + 1} / 7</strong></div>
                 <div className="progress"><i style={{ width: `${((step + 1) / 7) * 100}%` }} /></div>
-                <button onClick={() => navigate("case")}>进入病例工作台 <span>↗</span></button>
+                <button onClick={() => openCase("001")}>进入病例工作台 <span>↗</span></button>
               </div>
             </section>
 
@@ -285,11 +324,11 @@ export default function LearningWorkspace() {
               <div className="section-heading"><div><span>CURRICULUM</span><h2>学习路径</h2></div><p>每节约20分钟。统计基础可快速通过，重点训练分子机制和证据适用边界。</p></div>
               <div className="module-grid">
                 {modules.map((module) => (
-                  <article className="module-card module-action" key={module.no} onClick={() => { setLessonId(lessons[Number(module.no) - 1].id); navigate("courses"); }}>
+                  <button className="module-card module-action" key={module.no} onClick={() => { setLessonId(lessons[Number(module.no) - 1].id); navigate("courses"); }}>
                     <span className="module-no">{module.no}</span><h3>{module.title}</h3><p>{module.meta}</p>
                     <div className="mini-progress"><i style={{ width: `${module.progress}%` }} /></div>
                     <small>{module.progress ? `${module.progress}% 已完成` : "尚未开始"}</small>
-                  </article>
+                  </button>
                 ))}
               </div>
             </section>
@@ -326,8 +365,8 @@ export default function LearningWorkspace() {
 
         {view === "library" && (
           <section className="page-section">
-            <div className="page-intro"><span className="eyebrow">CASE MATRIX</span><h1>病例覆盖矩阵</h1><p>第一例已开放完整作答；其余病例只有完成来源、HGVS、疾病机制与答案版本审核后才会解锁。</p></div>
-            <div className="library-grid">{caseLibrary.map((item) => <article className={`library-card ${item.tone}`} key={item.id}><div className="library-top"><span>CASE {item.id}</span><b>{item.status}</b></div><h2>{item.title}</h2><p className="gene-label">{item.gene} · {item.mode}</p><div className="focus-box"><span>训练重点</span><p>{item.focus}</p></div><small>主要依据：{item.source}</small>{item.id === "001" ? <button onClick={() => navigate("case")}>开始完整病例 →</button> : item.id === "002" ? <a href="https://www.ncbi.nlm.nih.gov/clinvar/RCV000000607/" target="_blank">查看专家组公开记录 ↗</a> : item.id === "003" ? <a href="https://www.ncbi.nlm.nih.gov/clinvar/RCV000003934/" target="_blank">查看专家组公开记录 ↗</a> : <button disabled>审核完成后开放</button>}</article>)}</div>
+            <div className="page-intro"><span className="eyebrow">CASE MATRIX</span><h1>病例覆盖矩阵</h1><p>已有两例开放完整作答；其余病例只有完成来源、HGVS、疾病机制与答案版本审核后才会解锁。</p></div>
+            <div className="library-grid">{caseLibrary.map((item) => <article className={`library-card ${item.tone}`} key={item.id}><div className="library-top"><span>CASE {item.id}</span><b>{item.status}</b></div><h2>{item.title}</h2><p className="gene-label">{item.gene} · {item.mode}</p><div className="focus-box"><span>训练重点</span><p>{item.focus}</p></div><small>主要依据：{item.source}</small>{item.id === "001" || item.id === "002" ? <button onClick={() => openCase(item.id)}>开始完整病例 →</button> : item.id === "003" ? <a href="https://www.ncbi.nlm.nih.gov/clinvar/RCV000003934/" target="_blank" rel="noreferrer">查看专家组公开记录 ↗</a> : <button disabled>审核完成后开放</button>}</article>)}</div>
             <div className="matrix-legend"><span><i className="dot live"/>可作答</span><span><i className="dot verified"/>证据已核查，交互待制作</span><span><i className="dot review"/>选例与证据审核中</span><span><i className="dot planned"/>素材准备中</span></div>
           </section>
         )}
@@ -364,17 +403,17 @@ export default function LearningWorkspace() {
                 <section className="current-guidance"><span>当前通用使用提示</span><p>{activeRule.current}</p></section>
                 <section className="pitfall-guidance"><span>高风险误用</span><p>{activeRule.pitfalls}</p></section>
                 <div className="detail-source"><span>主要依据</span><b>{activeRule.source}</b><small>证据快照：2026-08-13</small></div>
-                <div className="detail-actions"><button className="secondary" onClick={() => navigate("case")}>在病例中练习</button><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank">打开ClinGen现行汇总 ↗</a></div>
+                <div className="detail-actions"><button className="secondary" onClick={() => navigate("case")}>在病例中练习</button><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">打开ClinGen现行汇总 ↗</a></div>
               </article>
             </div>
             <section className="combination-panel"><div><span className="eyebrow">COMBINATION RULES</span><h2>五级分类组合速查</h2><p>这是ACMG/AMP 2015表5的压缩提示。采用强度调整、VCEP规范或贝叶斯/计分化框架时，应使用对应规范的完整组合方法。</p></div><div>{combinationRows.map(([label, body]) => <article key={label}><b>{label}</b><p>{body}</p></article>)}</div></section>
             <section className="evidence-workbench"><div className="workbench-intro"><span className="eyebrow">COMBINATION PRACTICE</span><h2>证据组合练习台</h2><p>点击加入证据，观察ACMG/AMP表5组合结果。练习台采用代码原始强度，但按ClinGen通用建议将PM2作为支持级；暂不模拟其他代码的升降级。实际工作以适用VCEP的强度与组合规则为准。</p><div className={`workbench-result ${workbenchResult.tone}`}><span>当前结果</span><strong>{workbenchResult.label}</strong><p>{workbenchResult.reason}</p></div><button onClick={() => setWorkbench([])}>清空组合</button></div><div className="workbench-codes">{evidenceRules.map(rule => <button className={`${workbench.includes(rule.code) ? "selected" : ""} ${rule.direction === "致病" ? "pathogenic" : "benign"}`} disabled={rule.status === "不建议使用"} onClick={() => setWorkbench(workbench.includes(rule.code) ? workbench.filter(code => code !== rule.code) : [...workbench, rule.code])} key={rule.code}><b>{rule.code}</b><span>{rule.code === "PM2" ? "支持（ClinGen通用）" : rule.strength}</span></button>)}</div></section>
             <section className="revision-map"><h2>ClinGen通用修订地图</h2><div><article><b>人群</b><p>BA1例外列表；PM2降为支持；gnomAD v4使用指导。</p></article><article><b>机制与剪接</b><p>PVS1决策树；PVS1/PS1/PP3/BP4/BP7剪接框架。</p></article><article><b>病例与家系</b><p>PS2/PM6计点；PM3反式计点；PP1/BS4与PP4。</p></article><article><b>功能与计算</b><p>PS3/BS3实验质量；PP3/BP4工具校准。</p></article><article><b>来源型证据</b><p>PP5/BP6不建议使用，应回溯底层证据。</p></article><article><b>分类框架</b><p>强度改名规范；贝叶斯模型；自然尺度计分系统。</p></article></div></section>
-            <div className="sources-panel"><h2>主版本与原始来源</h2><ul><li><a href="https://www.acmg.net/docs/standards_guidelines_for_the_interpretation_of_sequence_variants.pdf" target="_blank">ACMG/AMP序列变异解读指南（2015，原始28条标准及组合表）</a></li><li><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank">ClinGen Variant Classification Guidance（页面标注最后更新：2025-07）</a></li><li><a href="https://www.clinicalgenome.org/curation-activities/variant-pathogenicity/documents/" target="_blank">ClinGen变异致病性文件与VCEP规范</a></li><li><a href="https://varnomen.hgvs.org/" target="_blank">HGVS Nomenclature Recommendations</a></li></ul><p>本页是教学用工作手册，不替代实验室SOP或基因/疾病特异规范。动态资源须在每次真实解读时重新核查。</p></div>
+            <div className="sources-panel"><h2>主版本与原始来源</h2><ul><li><a href="https://www.acmg.net/docs/standards_guidelines_for_the_interpretation_of_sequence_variants.pdf" target="_blank" rel="noreferrer">ACMG/AMP序列变异解读指南（2015，原始28条标准及组合表）</a></li><li><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">ClinGen Variant Classification Guidance（页面标注最后更新：2025-07）</a></li><li><a href="https://www.clinicalgenome.org/curation-activities/variant-pathogenicity/documents/" target="_blank" rel="noreferrer">ClinGen变异致病性文件与VCEP规范</a></li><li><a href="https://varnomen.hgvs.org/" target="_blank" rel="noreferrer">HGVS Nomenclature Recommendations</a></li></ul><p>本页是教学用工作手册，不替代实验室SOP或基因/疾病特异规范。动态资源须在每次真实解读时重新核查。</p></div>
           </section>
         )}
 
-        {view === "case" && (
+        {view === "case" && activeCaseId === "001" && (
           <section className="case-workspace">
             <aside className="case-sidebar">
               <button className="back" onClick={() => navigate("dashboard")}>← 返回学习台</button>
@@ -397,6 +436,71 @@ export default function LearningWorkspace() {
           </section>
         )}
 
+        {view === "case" && activeCaseId === "002" && (
+          <section className="case-workspace pah-case">
+            <aside className="case-sidebar">
+              <button className="back" onClick={() => navigate("library")}>← 返回病例库</button>
+              <span className="eyebrow">CASE 002 · 教学重组病例</span><h1>PAH缺乏症</h1><p>三联体WES · GRCh38 · 复合杂合</p>
+              <div className="synthetic-badge"><b>证据边界</b><span>变异与专家分类来自公开真实记录；个案数值、父母来源和相位为教学重组，不对应单一真实患者。</span></div>
+              <ol>{pahSteps.map((item, index) => <li className={index === pahStep ? "current" : index < pahStep ? "done" : ""} key={item}><button onClick={() => index <= pahStep && setPahStep(index)}><span>{index < pahStep ? "✓" : index + 1}</span>{item}</button></li>)}</ol>
+              <div className="snapshot"><b>证据快照</b><span>2026-08-13</span><small>答案按该日期锁定</small></div>
+            </aside>
+            <div className="case-main">
+              <div className="case-status"><span>步骤 {pahStep + 1} / 7</span><div><i style={{ width: `${((pahStep + 1) / 7) * 100}%` }} /></div></div>
+
+              {pahStep === 0 && <CaseBlock title="筛查异常与复核" lead="先确认高苯丙氨酸血症，再把分子结果放回生化背景。">
+                <div className="clinical-note"><b>教学重组个案</b><p>足月新生儿，新生儿筛查提示苯丙氨酸升高。复查血浆氨基酸：Phe 680 μmol/L，Phe:Tyr 5.2；采样前未开始限制苯丙氨酸饮食。患儿一般情况稳定，父母无相关表现。</p><b>检测</b><p>患儿及父母三联体WES；亲缘关系与样本质控通过。以下候选使用GRCh38与MANE Select转录本NM_000277.3。</p></div>
+                <PromptBox>GeneReviews 2025指出，异常筛查后的诊断建立需要生化复核与分子检测；分子分析不应延误必要处置。</PromptBox>
+              </CaseBlock>}
+
+              {pahStep === 1 && <CaseBlock title="鉴别诊断与缺口" lead="持续高苯丙氨酸血症不能在看到PAH变异后就停止鉴别。">
+                <div className="differential-grid"><article><span>01</span><b>确认生化阈值</b><p>Phe &gt;120 μmol/L且Phe:Tyr ≥3支持生化异常；本教学数据符合。</p></article><article><span>02</span><b>排除BH4相关缺陷</b><p>尿/血蝶呤及必要时红细胞DHPR活性；也可使用覆盖高苯丙氨酸血症相关基因的检测。</p></article><article><span>03</span><b>不要等待分型才处置</b><p>异常筛查后应及时联系代谢专科；分子结果用于确认、管理信息与遗传咨询。</p></article></div>
+                <div className="citation-note"><b>病例补充</b><p>本教学个案设定蝶呤谱与DHPR活性未提示BH4合成或再循环缺陷。这个设定仅用于训练病例综合，不是公开患者数据。</p></div>
+              </CaseBlock>}
+
+              {pahStep === 2 && <CaseBlock title="遗传模式假设" lead="选择PAH缺乏症与当前家系最匹配的遗传模式。">
+                <ChoiceRow options={[["AR","常染色体隐性"],["AD","常染色体显性"],["XL","X连锁"],["MT","线粒体遗传"]]} value={pahAnswer.inheritance} onChange={(value) => setPahAnswer({...pahAnswer, inheritance:value})}/>
+                {checked && <Feedback ok={pahAnswer.inheritance === "AR"}>{pahAnswer.inheritance === "AR" ? "正确。PAH缺乏症为常染色体隐性遗传，需分别评价两条等位基因并确认其相位。" : "PAH缺乏症的明确遗传模式是常染色体隐性；无家族史并不反对该模式。"}</Feedback>}
+              </CaseBlock>}
+
+              {pahStep === 3 && <CaseBlock title="双变异与相位" lead="相位是隐性病病例级解释的核心，不应看到两条杂合变异就默认反式。">
+                <div className="allele-pair">
+                  <article><span>母源等位基因</span><h3>PAH c.1222C&gt;T</h3><p>NM_000277.3 · p.(Arg408Trp)</p><small>GRCh38 chr12:102840493 G&gt;A · VAF 0.48</small><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/577/" target="_blank" rel="noreferrer">ClinVar Variation ID 577 ↗</a></article>
+                  <div className="phase-mark">?</div>
+                  <article><span>父源等位基因</span><h3>PAH c.1246C&gt;A</h3><p>NM_000277.3 · p.(Pro416Thr)</p><small>GRCh38 chr12:102840469 G&gt;T · VAF 0.52</small><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/987913/" target="_blank" rel="noreferrer">ClinVar Variation ID 987913 ↗</a></article>
+                </div>
+                <ChoiceRow options={[["trans","反式（分别来自父母）"],["cis","顺式（位于同一等位基因）"],["unknown","相位未知"],["de_novo","均为新生"]]} value={pahAnswer.phase} onChange={(value) => setPahAnswer({...pahAnswer, phase:value})}/>
+                {checked && <Feedback ok={pahAnswer.phase === "trans"}>{pahAnswer.phase === "trans" ? "正确。两条变异分别由母亲和父亲传递，因此在患儿中可判定为反式。" : "三联体结果显示一条母源、一条父源；这能直接建立反式关系。"}</Feedback>}
+              </CaseBlock>}
+
+              {pahStep === 4 && <CaseBlock title="两条变异分别判级" lead="先独立判断每条变异，再讨论它们能否共同解释病例。请写出来源、强度、适用性与反证。">
+                <div className="dual-curation">
+                  <article><div className="curation-head"><span>VARIANT A</span><b>c.1222C&gt;T · p.(Arg408Trp)</b></div><div className="evidence-chips"><span>PS3</span><span>PM3_Strong</span><span>PP3</span><span>PP4_Moderate</span></div><p>PAH VCEP记录：功能研究支持约1–2%野生型活性；既往在反式致病等位基因背景中观察；专家组于2018年分类。</p><ChoiceRow options={[["Pathogenic","致病"],["Likely pathogenic","可能致病"],["VUS","意义未明"],["Benign","良性"]]} value={pahAnswer.variant1Class} onChange={(value) => setPahAnswer({...pahAnswer, variant1Class:value})}/><label className="rationale-field"><span>证据理由</span><textarea value={pahAnswer.rationale1} onChange={(event) => setPahAnswer({...pahAnswer, rationale1:event.target.value})} placeholder="至少50字：说明专家组、疾病实体、证据代码与强度，以及是否存在反证……"/></label></article>
+                  <article><div className="curation-head"><span>VARIANT B</span><b>c.1246C&gt;A · p.(Pro416Thr)</b></div><div className="evidence-chips"><span>PP3_Strong</span><span>PM2_Supporting</span><span>PM3_Supporting</span><span>PM5_Supporting</span><span>PP4</span></div><p>PAH VCEP 2024记录：REVEL 0.965、gnomAD v4.1.0未见、既往病例及同残基变化提供支持；专家组结论为可能致病。</p><ChoiceRow options={[["Pathogenic","致病"],["Likely pathogenic","可能致病"],["VUS","意义未明"],["Benign","良性"]]} value={pahAnswer.variant2Class} onChange={(value) => setPahAnswer({...pahAnswer, variant2Class:value})}/><label className="rationale-field"><span>证据理由</span><textarea value={pahAnswer.rationale2} onChange={(event) => setPahAnswer({...pahAnswer, rationale2:event.target.value})} placeholder="至少50字：不要把多个预测工具重复计分，也不要把专家组结论再算作PP5……"/></label></article>
+                </div>
+                {checked && <Feedback ok={pahAnswer.variant1Class === "Pathogenic" && pahAnswer.variant2Class === "Likely pathogenic" && pahAnswer.rationale1.length >= 50 && pahAnswer.rationale2.length >= 50}>公开专家组结论分别为Pathogenic与Likely Pathogenic。理由不足50字时不会获得书写分；重点是说明为什么证据适用于PAH—苯丙酮尿症这一疾病实体，而不只是列代码。</Feedback>}
+                <div className="citation-note warning-note"><b>防重复计分</b><p>教学重组的父母来源与相位不能反向写入公共变异分类，也不能当成新的PM3病例。真实实验室若要用本地病例调整分类，必须确认独立性、表型与相位，并按当前PAH VCEP规范计点。</p></div>
+              </CaseBlock>}
+
+              {pahStep === 5 && <CaseBlock title="病例级结论" lead="把变异分类、双等位基因、相位、生化表型和鉴别诊断合在一起。">
+                <ChoiceRow options={[["supports","支持PAH缺乏症分子诊断"],["carrier","仅提示携带者"],["uncertain","仍为分子诊断不确定"],["rules_out","排除PAH缺乏症"]]} value={pahAnswer.conclusion} onChange={(value) => setPahAnswer({...pahAnswer, conclusion:value})}/>
+                {checked && <Feedback ok={pahAnswer.conclusion === "supports"}>{pahAnswer.conclusion === "supports" ? "正确。两条P/LP变异反式存在，且生化表型与疾病机制吻合，支持PAH缺乏症的分子诊断。" : "GeneReviews明确：双等位PAH致病/可能致病变异可建立分子诊断；一条致病加一条VUS则通常不能。"}</Feedback>}
+                <div className="three-levels"><div><span>1</span><b>变异层</b><p>A为致病，B为可能致病</p></div><div><span>2</span><b>基因型层</b><p>两条变异经父母来源证实反式</p></div><div><span>3</span><b>病例层</b><p>生化异常吻合，BH4相关缺陷已作鉴别</p></div></div>
+              </CaseBlock>}
+
+              {pahStep === 6 && <CaseBlock title="报告与形成性评分" lead="报告必须同时写清两条变异、相位、分别分类和病例级限定。">
+                <textarea value={pahAnswer.report} onChange={(event) => setPahAnswer({...pahAnswer, report:event.target.value})} placeholder="建议包含：PAH、NM_000277.3、两条c./p.描述、杂合与父母来源、反式、分别分类及依据、生化相关性、验证/咨询与检测边界……"/>
+                <div className="report-checks"><span className={pahAnswer.report.includes("PAH") ? "met" : ""}>PAH</span><span className={pahAnswer.report.includes("c.1222") ? "met" : ""}>变异A HGVS</span><span className={pahAnswer.report.includes("c.1246") ? "met" : ""}>变异B HGVS</span><span className={pahAnswer.report.includes("反式") ? "met" : ""}>相位</span><span className={pahAnswer.report.length >= 100 ? "met" : ""}>≥100字</span></div>
+                {checked && <Feedback ok={pahAnswer.report.length >= 100 && pahAnswer.report.includes("PAH") && pahAnswer.report.includes("c.1222") && pahAnswer.report.includes("c.1246")}>参考结构：教学个案检出PAH基因NM_000277.3:c.1222C&gt;T [p.(Arg408Trp)]与c.1246C&gt;A [p.(Pro416Thr)]杂合变异，分别来自母亲与父亲，支持反式。两变异经PAH VCEP分别评为致病和可能致病；结合持续高苯丙氨酸血症及鉴别检查，结果支持PAH缺乏症的分子诊断。建议按实验室流程确认并结合代谢专科评估及遗传咨询。</Feedback>}
+                <div className="case-sources"><b>本例原始依据</b><a href="https://www.ncbi.nlm.nih.gov/books/NBK1504/" target="_blank" rel="noreferrer">GeneReviews：PAH Deficiency（2025修订）↗</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/577/" target="_blank" rel="noreferrer">ClinVar：c.1222C&gt;T专家组记录 ↗</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/987913/" target="_blank" rel="noreferrer">ClinVar：c.1246C&gt;A专家组记录 ↗</a></div>
+              </CaseBlock>}
+
+              <div className="case-actions"><button className="secondary" disabled={pahStep === 0} onClick={() => {setPahStep(Math.max(0, pahStep - 1));setChecked(false)}}>上一步</button><button className="check" onClick={() => setChecked(true)}>检查本步</button><button className="primary" disabled={pahStep === 6} onClick={() => {setPahStep(Math.min(6, pahStep + 1));setChecked(false)}}>保存并继续 →</button></div>
+              {pahStep === 6 && checked && <div className="score-card"><span>CASE 002 形成性得分</span><strong>{pahScore}</strong><small>/ 100</small><div className="score-breakdown"><span>模式 10</span><span>相位 15</span><span>双变异 30</span><span>理由 20</span><span>病例结论 10</span><span>报告 15</span></div><p>这是站内规则化学习反馈，不代表临床授权或职业资格。</p></div>}
+            </div>
+          </section>
+        )}
+
         {view === "roadmap" && (
           <section className="page-section roadmap">
             <div className="page-intro"><span className="eyebrow">COMPETENCY MAP</span><h1>独立解读能力地图</h1><p>认证只表示站内训练水平，不等同于临床遗传学职业资格。</p></div>
@@ -405,7 +509,7 @@ export default function LearningWorkspace() {
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v0.3</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v0.4</span></footer>
     </div>
   );
 }
