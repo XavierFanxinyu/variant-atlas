@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { boundaryCases, errorPatterns, evidenceDrills, examBanks, lessonAddons, reportTemplates, supplementalLessons, type BoundaryCaseDefinition, type Lesson } from "./learning-content";
 
-type View = "dashboard" | "case" | "rules" | "roadmap" | "courses" | "library" | "exam" | "mistakes";
+type View = "dashboard" | "case" | "rules" | "roadmap" | "courses" | "library" | "exam" | "report" | "mistakes";
 type CaseAnswer = { inheritance: string; evidence: string[]; classification: string; report: string };
 type PahAnswer = {
   inheritance: string;
@@ -14,17 +15,19 @@ type PahAnswer = {
   conclusion: string;
   report: string;
 };
+type LdlrAnswer = { inheritance: string; pvs1: string; evidence: string[]; classification: string; conflict: string; report: string };
+type NegativeAnswer = { interpretation: string; nextTest: string; differential: string[]; report: string; reanalysis: string };
 
 const modules = [
-  { no: "01", title: "表型与遗传模式", meta: "6 节 · 约 120 分钟", progress: 33 },
-  { no: "02", title: "质量控制与候选筛选", meta: "7 节 · 约 140 分钟", progress: 0 },
-  { no: "03", title: "HGVS 与转录本", meta: "5 节 · 约 100 分钟", progress: 0 },
-  { no: "04", title: "ACMG / AMP 证据", meta: "12 节 · 约 240 分钟", progress: 8 },
-  { no: "05", title: "病例级综合解释", meta: "6 节 · 约 120 分钟", progress: 0 },
-  { no: "06", title: "报告撰写", meta: "5 节 · 约 100 分钟", progress: 0 },
+  { no: "01", title: "表型与遗传模式", meta: "4 课 · 约 105 分钟", progress: 0 },
+  { no: "02", title: "质量控制与候选筛选", meta: "4 课 · 约 105 分钟", progress: 0 },
+  { no: "03", title: "HGVS 与转录本", meta: "4 课 · 约 105 分钟", progress: 0 },
+  { no: "04", title: "ACMG / AMP 证据", meta: "4 课 · 约 140 分钟", progress: 0 },
+  { no: "05", title: "病例级综合解释", meta: "4 课 · 约 120 分钟", progress: 0 },
+  { no: "06", title: "报告撰写与重分析", meta: "4 课 · 约 115 分钟", progress: 0 },
 ];
 
-const lessons = [
+const lessons: Lesson[] = [
   {
     id: "phenotype",
     no: "01",
@@ -111,24 +114,20 @@ const lessons = [
   },
 ];
 
+lessons.push(...supplementalLessons);
+
 const caseLibrary = [
   { id: "001", title: "Noonan综合征", gene: "PTPN11", mode: "AD · de novo", focus: "PS2 / 功能证据 / 病例相关性", status: "开放", tone: "live", source: "ClinGen RASopathy VCEP" },
   { id: "002", title: "PAH缺乏症", gene: "PAH", mode: "AR · 复合杂合", focus: "PM3 / 两等位基因 / 反式", status: "开放", tone: "live", source: "ClinGen PAH VCEP + GeneReviews" },
-  { id: "003", title: "家族性高胆固醇血症", gene: "LDLR", mode: "AD · 家系", focus: "PVS1强度 / RNA / 共分离", status: "证据已核查", tone: "verified", source: "ClinGen FH VCEP" },
-  { id: "004", title: "终末外显子截短变异", gene: "待选VCEP基因", mode: "AD", focus: "PVS1降级 / NMD / 转录本", status: "选例复核中", tone: "review", source: "ClinGen SVI PVS1" },
-  { id: "005", title: "非经典剪接变异", gene: "待选VCEP基因", mode: "AD或AR", focus: "剪接预测 / RNA / 证据依赖", status: "选例复核中", tone: "review", source: "ClinGen SVI Splicing" },
-  { id: "006", title: "ClinVar分类冲突", gene: "待选专家组变异", mode: "多来源", focus: "提交层级 / 时间 / VUS边界", status: "选例复核中", tone: "review", source: "ClinVar + 原始文献" },
-  { id: "007", title: "疑似测序伪影", gene: "同源或低复杂区域", mode: "单人WES", focus: "VAF / IGV / 正交验证", status: "技术素材准备中", tone: "planned", source: "公开技术标准" },
-  { id: "008", title: "阴性与双重诊断", gene: "多基因", mode: "三联体WES", focus: "部分解释 / 重分析 / 检测盲区", status: "病例筛选中", tone: "planned", source: "公开病例系列" },
+  { id: "003", title: "家族性高胆固醇血症", gene: "LDLR", mode: "AD · 家系", focus: "PVS1强度 / RNA / 共分离 / 冲突层级", status: "开放", tone: "live", source: "ClinGen FH VCEP + GeneReviews" },
+  { id: "004", title: "单等位基因与阴性升级", gene: "PAH", mode: "AR · 仅检出一条P", focus: "未确诊边界 / CNV / 深内含子 / BH4鉴别", status: "开放", tone: "live", source: "GeneReviews + ClinGen PAH VCEP" },
+  { id: "005", title: "深内含子剪接变异", gene: "CFTR", mode: "AR · WGS补充", focus: "PVS1(RNA) / 深内含子 / 证据依赖", status: "开放", tone: "live", source: "ClinGen SVI Splicing + CFTR2" },
+  { id: "006", title: "高频但低外显率", gene: "GJB2", mode: "AR · 专家组例外", focus: "BA1例外 / 提交层级 / 外显率", status: "开放", tone: "live", source: "ClinGen Hearing Loss VCEP" },
+  { id: "007", title: "低比例组织嵌合", gene: "PIK3CA", mode: "mosaic AD · 受累组织", focus: "样本选择 / 低VAF / 疾病语境", status: "开放", tone: "live", source: "ClinGen Brain Malformations VCEP + GeneReviews" },
+  { id: "008", title: "外显子级CNV", gene: "DMD", mode: "XL · exon 50 deletion", focus: "CNV确认 / 阅读框 / 报告分辨率", status: "开放", tone: "live", source: "GeneReviews + FDA公开材料" },
 ];
 
-const examQuestions = [
-  { q: "父母表型正常、先证者疑似显性病时，首要正确表述是？", options: ["排除显性遗传", "重点考虑de novo，同时保留不完全外显等可能", "只筛隐性纯合", "父母无需纳入分析"], answer: 1, tag: "遗传模式" },
-  { q: "多个计算工具均预测有害，应如何使用？", options: ["每个工具各计一次PP3", "直接升级为PS3", "按经校准的组合/阈值使用一次，避免重复计分", "等同于功能实验"], answer: 2, tag: "证据独立性" },
-  { q: "隐性病检出一条致病变异和一条VUS，最稳妥的病例结论是？", options: ["已经确诊", "VUS自动升级", "需核查相位与第二变异证据，通常不能仅据此确诊", "两条变异一定反式"], answer: 2, tag: "病例级解释" },
-  { q: "ClinVar存在专家组分类时，正确做法是？", options: ["只复制五级分类", "核查疾病实体、规范版本、证据摘要和当前适用性", "按提交数量投票", "将所有提交都作为PS4病例"], answer: 1, tag: "数据库检索" },
-  { q: "WES阴性结果最恰当的报告方式是？", options: ["排除遗传病", "未发现可报告变异，并说明检测限制和后续方向", "不写任何限制", "等同于良性"], answer: 1, tag: "报告写作" },
-];
+const examQuestions = examBanks.L1;
 
 type EvidenceRule = { code: string; title: string; direction: "致病" | "良性"; strength: string; domain: string; original: string; current: string; pitfalls: string; status: "ClinGen细化" | "原始框架" | "不建议使用"; source: string };
 
@@ -185,15 +184,28 @@ export default function LearningWorkspace() {
   const [pahStep, setPahStep] = useState(0);
   const [pahAnswer, setPahAnswer] = useState<PahAnswer>(emptyPahAnswer);
   const [lessonId, setLessonId] = useState("phenotype");
+  const [courseModule, setCourseModule] = useState("01");
   const [lessonDone, setLessonDone] = useState<string[]>([]);
+  const [practiceRevealed, setPracticeRevealed] = useState<string[]>([]);
+  const [examLevel, setExamLevel] = useState<keyof typeof examBanks>("L1");
   const [examAnswers, setExamAnswers] = useState<number[]>(Array(examQuestions.length).fill(-1));
   const [examSubmitted, setExamSubmitted] = useState(false);
+  const [examResults, setExamResults] = useState<Partial<Record<keyof typeof examBanks, number>>>({});
   const [mistakes, setMistakes] = useState<string[]>([]);
   const [ruleDirection, setRuleDirection] = useState("全部");
   const [ruleDomain, setRuleDomain] = useState("全部");
   const [ruleSearch, setRuleSearch] = useState("");
   const [selectedRule, setSelectedRule] = useState("PVS1");
   const [workbench, setWorkbench] = useState<string[]>([]);
+  const [drillIndex, setDrillIndex] = useState(0);
+  const [drillAnswers, setDrillAnswers] = useState<Record<string, string>>({});
+  const [drillRationales, setDrillRationales] = useState<Record<string, string>>({});
+  const [drillCompleted, setDrillCompleted] = useState<string[]>([]);
+  const [reportTemplateId, setReportTemplateId] = useState("ad");
+  const [reportDraft, setReportDraft] = useState("");
+  const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [reportBestScore, setReportBestScore] = useState(0);
+  const [additionalCaseScores, setAdditionalCaseScores] = useState<Record<string, number>>({});
 
   useEffect(() => {
     const saved = window.localStorage.getItem("variant-atlas-demo");
@@ -207,15 +219,27 @@ export default function LearningWorkspace() {
         setPahStep(state.pahStep ?? 0);
         setPahAnswer(state.pahAnswer ?? emptyPahAnswer);
         setLessonDone(state.lessonDone ?? []);
+        setPracticeRevealed(state.practiceRevealed ?? []);
+        setExamResults(state.examResults ?? {});
         setMistakes(state.mistakes ?? []);
+        setDrillAnswers(state.drillAnswers ?? {});
+        setDrillRationales(state.drillRationales ?? {});
+        setDrillCompleted(state.drillCompleted ?? []);
+        setReportDraft(state.reportDraft ?? "");
+        setReportTemplateId(state.reportTemplateId ?? "ad");
+        setReportBestScore(state.reportBestScore ?? 0);
+        setAdditionalCaseScores(state.additionalCaseScores ?? {});
         /* eslint-enable react-hooks/set-state-in-effect */
       } catch { /* ignore a damaged local draft */ }
     }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, mistakes }));
-  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, mistakes]);
+    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDraft, reportTemplateId, reportBestScore, additionalCaseScores }));
+  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDraft, reportTemplateId, reportBestScore, additionalCaseScores]);
+
+  const noonanReportGrade = useMemo(() => gradeReport(reportTemplates[0], answer.report), [answer.report]);
+  const pahReportGrade = useMemo(() => gradeReport(reportTemplates[1], pahAnswer.report), [pahAnswer.report]);
 
   const score = useMemo(() => {
     let value = 0;
@@ -223,9 +247,9 @@ export default function LearningWorkspace() {
     const expected = ["PS2_VeryStrong", "PS3", "PP1_Strong", "PP3"];
     value += expected.filter((item) => answer.evidence.includes(item)).length * 10;
     if (answer.classification === "Pathogenic") value += 20;
-    if (answer.report.length >= 60) value += 20;
+    value += Math.round(noonanReportGrade.total * .2);
     return Math.min(value, 100);
-  }, [answer]);
+  }, [answer, noonanReportGrade.total]);
 
   const pahScore = useMemo(() => {
     let value = 0;
@@ -236,21 +260,57 @@ export default function LearningWorkspace() {
     if (pahAnswer.rationale1.length >= 50) value += 10;
     if (pahAnswer.rationale2.length >= 50) value += 10;
     if (pahAnswer.conclusion === "supports") value += 10;
-    if (pahAnswer.report.length >= 100 && pahAnswer.report.includes("PAH") && pahAnswer.report.includes("c.1222") && pahAnswer.report.includes("c.1246")) value += 15;
+    value += Math.round(pahReportGrade.total * .15);
     return value;
-  }, [pahAnswer]);
+  }, [pahAnswer, pahReportGrade.total]);
 
-  const examScore = useMemo(() => examQuestions.reduce((total, question, index) => total + (examAnswers[index] === question.answer ? 20 : 0), 0), [examAnswers]);
+  const currentExam = examBanks[examLevel];
+  const examScore = useMemo(() => Math.round(currentExam.reduce((total, question, index) => total + (examAnswers[index] === question.answer ? 100 / currentExam.length : 0), 0)), [currentExam, examAnswers]);
 
   const activeLesson = lessons.find((lesson) => lesson.id === lessonId) ?? lessons[0];
+  const activeLessonAddon = lessonAddons[activeLesson.id];
+  const lessonPractice = activeLesson.practice ?? activeLessonAddon?.practice;
+  const lessonSources = activeLesson.sources ?? activeLessonAddon?.sources ?? [];
+  const currentModuleLessons = lessons.filter((lesson) => lesson.no === courseModule);
+  const currentLessonIndex = currentModuleLessons.findIndex((lesson) => lesson.id === activeLesson.id);
   const activeRule = evidenceRules.find((rule) => rule.code === selectedRule) ?? evidenceRules[0];
   const filteredRules = evidenceRules.filter((rule) => (ruleDirection === "全部" || rule.direction === ruleDirection) && (ruleDomain === "全部" || rule.domain.includes(ruleDomain)) && `${rule.code}${rule.title}${rule.original}${rule.current}`.toLowerCase().includes(ruleSearch.toLowerCase()));
   const workbenchResult = useMemo(() => classifyTraditional(workbench), [workbench]);
+  const activeDrill = evidenceDrills[drillIndex];
+  const drillCorrectCount = evidenceDrills.filter((drill) => drillCompleted.includes(drill.id) && drill.expected.includes(drillAnswers[drill.id])).length;
+  const activeReportTemplate = reportTemplates.find((template) => template.id === reportTemplateId) ?? reportTemplates[0];
+  const reportGrade = useMemo(() => gradeReport(activeReportTemplate, reportDraft), [activeReportTemplate, reportDraft]);
+  const coursePercent = Math.round((lessonDone.length / lessons.length) * 100);
+  const scoredCases = [score,pahScore,...["003","004","005","006","007","008"].map(id => additionalCaseScores[id] ?? 0)];
+  const certification = {
+    L1: lessonDone.length >= 6 && (examResults.L1 ?? 0) >= 80,
+    L2: lessonDone.length >= 16 && (examResults.L2 ?? 0) >= 80 && drillCorrectCount >= 5 && scoredCases.every(value => value >= 70),
+    L3: lessonDone.length === lessons.length && (examResults.L3 ?? 0) >= 80 && reportBestScore >= 80 && scoredCases.every(value => value >= 85),
+  };
 
   function submitExam() {
-    const nextMistakes = examQuestions.filter((question, index) => examAnswers[index] !== question.answer).map((question) => question.tag);
+    const nextMistakes = currentExam.filter((question, index) => examAnswers[index] !== question.answer).map((question) => question.tag);
     setMistakes(Array.from(new Set([...mistakes, ...nextMistakes])));
+    setExamResults({ ...examResults, [examLevel]: Math.max(examResults[examLevel] ?? 0, examScore) });
     setExamSubmitted(true);
+  }
+
+  function changeExamLevel(level: keyof typeof examBanks) {
+    setExamLevel(level);
+    setExamAnswers(Array(examBanks[level].length).fill(-1));
+    setExamSubmitted(false);
+  }
+
+  function openModule(no: string) {
+    const firstLesson = lessons.find((lesson) => lesson.no === no);
+    setCourseModule(no);
+    if (firstLesson) setLessonId(firstLesson.id);
+    navigate("courses");
+  }
+
+  function completeDrill() {
+    if (!drillAnswers[activeDrill.id] || (drillRationales[activeDrill.id] ?? "").length < 20) return;
+    setDrillCompleted(Array.from(new Set([...drillCompleted, activeDrill.id])));
   }
 
   function navigate(next: View) {
@@ -286,8 +346,9 @@ export default function LearningWorkspace() {
           <button className={view === "rules" ? "active" : ""} onClick={() => navigate("rules")}>证据规则</button>
           <button className={view === "library" || view === "case" ? "active" : ""} onClick={() => navigate("library")}>病例库</button>
           <button className={view === "exam" ? "active" : ""} onClick={() => navigate("exam")}>测验</button>
+          <button className={view === "report" ? "active" : ""} onClick={() => navigate("report")}>报告实验室</button>
         </nav>
-        <div className="profile"><span>L1</span><div><b>基础识别</b><small>个人学习空间</small></div></div>
+        <button className="profile" onClick={() => navigate("roadmap")}><span>{certification.L3 ? "L3" : certification.L2 ? "L2" : certification.L1 ? "L1" : "L0"}</span><div><b>{certification.L3 ? "独立解读" : certification.L2 ? "证据评估" : certification.L1 ? "基础识别" : "学习中"}</b><small>查看能力认证</small></div></button>
       </header>
 
       <main>
@@ -314,29 +375,30 @@ export default function LearningWorkspace() {
             </section>
 
             <section className="metrics" aria-label="学习概况">
-              <div><span>学习路径</span><strong>6<small> 个模块</small></strong></div>
-              <div><span>病例矩阵</span><strong>8<small> 个训练情境</small></strong></div>
+              <div><span>课程进度</span><strong>{coursePercent}<small>% · 24课</small></strong></div>
+              <div><span>开放病例</span><strong>8<small> / 8 个情境</small></strong></div>
               <div><span>证据手册</span><strong>28<small> 条标准全覆盖</small></strong></div>
               <div><span>证据快照</span><strong>2026<small>-08-13</small></strong></div>
             </section>
 
             <section className="section-block">
-              <div className="section-heading"><div><span>CURRICULUM</span><h2>学习路径</h2></div><p>每节约20分钟。统计基础可快速通过，重点训练分子机制和证据适用边界。</p></div>
+              <div className="section-heading"><div><span>CURRICULUM</span><h2>学习路径</h2></div><p>24课约11.5小时。统计基础可快速通过，重点训练分子机制、证据适用边界和病例级整合。</p></div>
               <div className="module-grid">
-                {modules.map((module) => (
-                  <button className="module-card module-action" key={module.no} onClick={() => { setLessonId(lessons[Number(module.no) - 1].id); navigate("courses"); }}>
+                {modules.map((module) => { const moduleLessons=lessons.filter(lesson => lesson.no === module.no); const progress=Math.round((moduleLessons.filter(lesson => lessonDone.includes(lesson.id)).length/moduleLessons.length)*100); return (
+                  <button className="module-card module-action" key={module.no} onClick={() => openModule(module.no)}>
                     <span className="module-no">{module.no}</span><h3>{module.title}</h3><p>{module.meta}</p>
-                    <div className="mini-progress"><i style={{ width: `${module.progress}%` }} /></div>
-                    <small>{module.progress ? `${module.progress}% 已完成` : "尚未开始"}</small>
+                    <div className="mini-progress"><i style={{ width: `${progress}%` }} /></div>
+                    <small>{progress ? `${progress}% 已完成` : "尚未开始"}</small>
                   </button>
-                ))}
+                )})}
               </div>
             </section>
 
             <section className="dashboard-tools">
-              <button onClick={() => navigate("library")}><span>CASE MATRIX</span><b>查看8例覆盖矩阵</b><small>开放病例、已核查证据与待审核边界病例</small></button>
-              <button onClick={() => navigate("exam")}><span>ASSESSMENT</span><b>完成L1阶段测验</b><small>5题即时反馈，错误自动进入错题本</small></button>
+              <button onClick={() => navigate("library")}><span>CASE MATRIX</span><b>查看8例覆盖矩阵</b><small>八例均可逐步作答、评分并保存进度</small></button>
+              <button onClick={() => navigate("exam")}><span>ASSESSMENT</span><b>完成三级阶段测验</b><small>每级8题即时反馈，错误自动进入错题本</small></button>
               <button onClick={() => navigate("mistakes")}><span>REVIEW</span><b>查看错题本</b><small>{mistakes.length ? `${mistakes.length} 个待巩固主题` : "暂无错题，先完成阶段测验"}</small></button>
+              <button onClick={() => navigate("report")}><span>REPORT LAB</span><b>完成报告六维评分</b><small>阳性、复合杂合与VUS边界三类模板</small></button>
             </section>
 
             <section className="principle-strip">
@@ -350,38 +412,52 @@ export default function LearningWorkspace() {
         {view === "courses" && (
           <section className="course-workspace">
             <aside className="course-index">
-              <span className="eyebrow">CORE COURSE</span><h1>核心课程</h1><p>每节约20分钟，完成后保存在本机。</p>
-              {lessons.map((lesson) => <button className={lesson.id === activeLesson.id ? "active" : ""} onClick={() => setLessonId(lesson.id)} key={lesson.id}><span>{lessonDone.includes(lesson.id) ? "✓" : lesson.no}</span><div><b>{lesson.title}</b><small>{lesson.duration}</small></div></button>)}
+              <span className="eyebrow">CORE COURSE · 24 LESSONS</span><h1>核心课程</h1><p>约11.5小时。每课包含正文、判断练习、答案揭示与原始来源。</p>
+              <div className="course-progress"><span>总进度</span><b>{lessonDone.length} / {lessons.length}</b><div className="mini-progress"><i style={{width:`${coursePercent}%`}}/></div></div>
+              <div className="course-module-tabs">{modules.map(module => <button className={courseModule === module.no ? "active" : ""} onClick={() => { setCourseModule(module.no); const first=lessons.find(lesson => lesson.no === module.no); if (first) setLessonId(first.id); }} key={module.no}><span>{module.no}</span>{module.title}</button>)}</div>
+              <div className="course-lesson-list">{currentModuleLessons.map((lesson, index) => <button className={lesson.id === activeLesson.id ? "active" : ""} onClick={() => setLessonId(lesson.id)} key={lesson.id}><span>{lessonDone.includes(lesson.id) ? "✓" : index + 1}</span><div><b>{lesson.title}</b><small>{lesson.duration}</small></div></button>)}</div>
             </aside>
             <article className="lesson-reader">
-              <div className="lesson-meta"><span>MODULE {activeLesson.no}</span><b>{activeLesson.duration}</b></div>
+              <div className="lesson-meta"><span>MODULE {activeLesson.no} · LESSON {currentLessonIndex + 1}/4</span><b>{activeLesson.duration}</b></div>
               <h1>{activeLesson.title}</h1><p className="lesson-objective">学习目标：{activeLesson.objective}</p>
               {activeLesson.sections.map(([title, body], index) => <section key={title}><span>{String(index + 1).padStart(2,"0")}</span><div><h2>{title}</h2><p>{body}</p></div></section>)}
               <div className="lesson-checkpoint"><b>本节检查点</b><p>{activeLesson.checkpoint}</p></div>
-              <div className="lesson-actions"><button className="secondary" onClick={() => navigate("rules")}>查看关联证据</button><button className="primary" onClick={() => setLessonDone(Array.from(new Set([...lessonDone, activeLesson.id])))}>{lessonDone.includes(activeLesson.id) ? "已完成 ✓" : "标记本节完成"}</button></div>
+              {lessonPractice && <div className="lesson-practice"><span className="eyebrow">DECISION PRACTICE</span><h2>本课判断练习</h2><p>{lessonPractice.prompt}</p><ul>{lessonPractice.tasks.map(task => <li key={task}>{task}</li>)}</ul><button className="secondary" onClick={() => setPracticeRevealed(Array.from(new Set([...practiceRevealed, activeLesson.id])))}>{practiceRevealed.includes(activeLesson.id) ? "答案已揭示" : "完成思考后揭示答案"}</button>{practiceRevealed.includes(activeLesson.id) && <div className="practice-answer"><b>参考思路</b><p>{lessonPractice.reveal}</p></div>}</div>}
+              <div className="lesson-sources"><b>原始来源</b>{lessonSources.map(source => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.label} ↗</a>)}</div>
+              <div className="lesson-actions"><button className="secondary" disabled={currentLessonIndex <= 0} onClick={() => setLessonId(currentModuleLessons[currentLessonIndex - 1].id)}>← 上一课</button><button className="secondary" disabled={currentLessonIndex >= currentModuleLessons.length - 1} onClick={() => setLessonId(currentModuleLessons[currentLessonIndex + 1].id)}>下一课 →</button><button className="primary" onClick={() => setLessonDone(Array.from(new Set([...lessonDone, activeLesson.id])))}>{lessonDone.includes(activeLesson.id) ? "已完成 ✓" : "标记本课完成"}</button></div>
             </article>
           </section>
         )}
 
         {view === "library" && (
           <section className="page-section">
-            <div className="page-intro"><span className="eyebrow">CASE MATRIX</span><h1>病例覆盖矩阵</h1><p>已有两例开放完整作答；其余病例只有完成来源、HGVS、疾病机制与答案版本审核后才会解锁。</p></div>
-            <div className="library-grid">{caseLibrary.map((item) => <article className={`library-card ${item.tone}`} key={item.id}><div className="library-top"><span>CASE {item.id}</span><b>{item.status}</b></div><h2>{item.title}</h2><p className="gene-label">{item.gene} · {item.mode}</p><div className="focus-box"><span>训练重点</span><p>{item.focus}</p></div><small>主要依据：{item.source}</small>{item.id === "001" || item.id === "002" ? <button onClick={() => openCase(item.id)}>开始完整病例 →</button> : item.id === "003" ? <a href="https://www.ncbi.nlm.nih.gov/clinvar/RCV000003934/" target="_blank" rel="noreferrer">查看专家组公开记录 ↗</a> : <button disabled>审核完成后开放</button>}</article>)}</div>
-            <div className="matrix-legend"><span><i className="dot live"/>可作答</span><span><i className="dot verified"/>证据已核查，交互待制作</span><span><i className="dot review"/>选例与证据审核中</span><span><i className="dot planned"/>素材准备中</span></div>
+            <div className="page-intro"><span className="eyebrow">CASE MATRIX</span><h1>病例覆盖矩阵</h1><p>八例均已开放完整作答，覆盖显性新生、隐性复合杂合、家系与冲突、单等位阴性升级、深内含子剪接、低外显率、组织嵌合和外显子级CNV。</p></div>
+            <div className="library-grid">{caseLibrary.map((item) => <article className={`library-card ${item.tone}`} key={item.id}><div className="library-top"><span>CASE {item.id}</span><b>{item.status}</b></div><h2>{item.title}</h2><p className="gene-label">{item.gene} · {item.mode}</p><div className="focus-box"><span>训练重点</span><p>{item.focus}</p></div><small>主要依据：{item.source}</small><button onClick={() => openCase(item.id)}>开始完整病例 →</button></article>)}</div>
+            <div className="matrix-legend"><span><i className="dot live"/>可作答、可计分、进度本地保存</span><span>病例中的教学重组信息均单独标明</span></div>
           </section>
         )}
 
         {view === "exam" && (
           <section className="page-section exam-page">
-            <div className="page-intro"><span className="eyebrow">L1 ASSESSMENT</span><h1>基础识别阶段测验</h1><p>每题20分。提交后显示依据，错误主题自动进入本机错题本。</p></div>
-            <div className="exam-layout"><div className="exam-questions">{examQuestions.map((question, qIndex) => <article className="exam-card" key={question.q}><span>QUESTION {qIndex + 1}</span><h2>{question.q}</h2><div>{question.options.map((option, optionIndex) => <button className={examAnswers[qIndex] === optionIndex ? "selected" : ""} onClick={() => { const next=[...examAnswers]; next[qIndex]=optionIndex; setExamAnswers(next); setExamSubmitted(false); }} key={option}><i>{String.fromCharCode(65 + optionIndex)}</i>{option}</button>)}</div>{examSubmitted && <Feedback ok={examAnswers[qIndex] === question.answer}>{examAnswers[qIndex] === question.answer ? "回答正确。" : `正确答案：${question.options[question.answer]}。`}</Feedback>}</article>)}</div><aside className="exam-summary"><span>作答进度</span><strong>{examAnswers.filter(value => value >= 0).length}<small> / 5</small></strong><div className="mini-progress"><i style={{width:`${examAnswers.filter(value => value >= 0).length * 20}%`}}/></div><button className="primary" disabled={examAnswers.some(value => value < 0)} onClick={submitExam}>提交测验</button>{examSubmitted && <div className="exam-result"><span>得分</span><b>{examScore}</b><small>/100</small><button onClick={() => navigate("mistakes")}>查看错题本 →</button></div>}</aside></div>
+            <div className="page-intro"><span className="eyebrow">TIERED ASSESSMENT · 24 QUESTIONS</span><h1>分层能力测验</h1><p>每级8题，80分通过。提交后逐题显示理由，错误主题自动进入本机错题本；记录保留最高分。</p></div>
+            <div className="exam-levels">{(["L1","L2","L3"] as const).map(level => <button className={examLevel === level ? "active" : ""} onClick={() => changeExamLevel(level)} key={level}><b>{level}</b><span>{level === "L1" ? "基础识别" : level === "L2" ? "证据评估" : "病例整合"}</span><small>最高分 {examResults[level] ?? "—"}</small></button>)}</div>
+            <div className="exam-layout"><div className="exam-questions">{currentExam.map((question, qIndex) => <article className="exam-card" key={question.id}><span>{examLevel} · QUESTION {qIndex + 1}</span><h2>{question.q}</h2><div>{question.options.map((option, optionIndex) => <button className={examAnswers[qIndex] === optionIndex ? "selected" : ""} onClick={() => { const next=[...examAnswers]; next[qIndex]=optionIndex; setExamAnswers(next); setExamSubmitted(false); }} key={option}><i>{String.fromCharCode(65 + optionIndex)}</i>{option}</button>)}</div>{examSubmitted && <Feedback ok={examAnswers[qIndex] === question.answer}>{examAnswers[qIndex] === question.answer ? "回答正确。" : `正确答案：${question.options[question.answer]}。`} {question.rationale}</Feedback>}</article>)}</div><aside className="exam-summary"><span>作答进度</span><strong>{examAnswers.filter(value => value >= 0).length}<small> / {currentExam.length}</small></strong><div className="mini-progress"><i style={{width:`${(examAnswers.filter(value => value >= 0).length/currentExam.length)*100}%`}}/></div><button className="primary" disabled={examAnswers.some(value => value < 0)} onClick={submitExam}>提交{examLevel}测验</button>{examSubmitted && <div className={`exam-result ${examScore >= 80 ? "passed" : ""}`}><span>{examScore >= 80 ? "通过" : "未通过"}</span><b>{examScore}</b><small>/100</small><button onClick={() => navigate("mistakes")}>复习错误主题 →</button></div>}<div className="exam-policy"><b>通过条件</b><p>单级≥80分；可以重复作答，能力认证使用历史最高分。</p></div></aside></div>
+          </section>
+        )}
+
+        {view === "report" && (
+          <section className="page-section report-lab-page">
+            <div className="page-intro"><span className="eyebrow">REPORT WRITING LAB</span><h1>报告六维评分实验室</h1><p>这是规则化形成性评分：检查必要信息是否出现，不评价医学事实真伪，也不替代专业复核。</p></div>
+            <div className="report-template-tabs">{reportTemplates.map(template => <button className={reportTemplateId === template.id ? "active" : ""} onClick={() => {setReportTemplateId(template.id);setReportDraft("");setReportSubmitted(false)}} key={template.id}><b>{template.title}</b><span>{template.case}</span></button>)}</div>
+            <div className="report-lab-grid"><article><div className="report-brief"><span>写作任务</span><h2>{activeReportTemplate.title}</h2><p>{activeReportTemplate.case}</p><ul>{activeReportTemplate.required.map(item => <li key={item}>{item}</li>)}</ul></div><textarea value={reportDraft} onChange={event => {setReportDraft(event.target.value);setReportSubmitted(false)}} placeholder="建议按检测发现 → 规范描述与来源 → 分别分类及依据 → 病例相关性 → 限定与建议的顺序撰写……"/><div className="report-lab-actions"><span>{reportDraft.length} 字符 · 历史最高 {reportBestScore}</span><button className="primary" disabled={reportDraft.length < 80} onClick={() => {setReportSubmitted(true);setReportBestScore(Math.max(reportBestScore,reportGrade.total))}}>提交六维评分</button></div></article><aside className="rubric-panel"><span>评分维度</span>{reportGrade.dimensions.map(item => <div className={item.met ? "met" : ""} key={item.label}><b>{item.met ? "✓" : "○"}</b><p><strong>{item.label}</strong><small>{item.hint}</small></p><i>{item.score}</i></div>)}<div className="rubric-total"><span>当前得分</span><b>{reportSubmitted ? reportGrade.total : "—"}</b><small>/100</small></div>{reportSubmitted && <p className="rubric-note">{reportGrade.total >= 80 ? "结构达到站内训练通过线。仍需核查证据真实性、疾病实体和措辞边界。" : "请优先补足未命中的维度，再重新提交。"}</p>}</aside></div>
           </section>
         )}
 
         {view === "mistakes" && (
           <section className="page-section">
-            <div className="page-intro"><span className="eyebrow">REVIEW BOOK</span><h1>错题本</h1><p>错题按能力主题聚合，避免只记住某一道题的选项。</p></div>
-            {mistakes.length ? <div className="mistake-list">{mistakes.map((item, index) => <article key={item}><span>{String(index + 1).padStart(2,"0")}</span><div><h2>{item}</h2><p>{item === "遗传模式" ? "复习de novo、不完全外显、表现度差异及父母低比例嵌合。" : item === "证据独立性" ? "复习预测证据、功能证据及同一底层数据的重复计分风险。" : item === "病例级解释" ? "复习隐性病相位、两等位基因分别分类和VUS边界。" : item === "数据库检索" ? "复习ClinVar提交层级、专家组规范、疾病实体和更新日期。" : "复习阴性结果的残余风险、检测盲区和下一步建议。"}</p></div><button onClick={() => navigate(item === "数据库检索" || item === "证据独立性" ? "rules" : "courses")}>开始复习 →</button></article>)}</div> : <div className="empty-state"><span>✓</span><h2>目前没有错题</h2><p>完成阶段测验后，错误主题会自动汇总到这里。</p><button className="primary" onClick={() => navigate("exam")}>开始测验</button></div>}
+            <div className="page-intro"><span className="eyebrow">REVIEW BOOK · ERROR RADAR</span><h1>错题本与误判雷达</h1><p>错题按能力主题聚合；下方12类高风险误判用于在真实解读前做主动检查。</p></div>
+            {mistakes.length ? <div className="mistake-list">{mistakes.map((item, index) => <article key={item}><span>{String(index + 1).padStart(2,"0")}</span><div><h2>{item}</h2><p>回到对应课程，复习该证据或病例判断的适用条件、反证与报告边界。</p></div><button onClick={() => navigate(item.includes("证据") || item.includes("PM") || item.includes("PS") || item.includes("PVS") ? "rules" : "courses")}>开始复习 →</button></article>)}</div> : <div className="empty-state"><span>✓</span><h2>目前没有测验错题</h2><p>完成任一分层测验后，错误主题会自动汇总到这里。</p><button className="primary" onClick={() => navigate("exam")}>开始测验</button></div>}
+            <section className="error-radar"><div className="section-heading"><div><span>PRE-FLIGHT CHECK</span><h2>12类常见误判</h2></div><p>每张卡包含错误模式、为什么危险和纠正动作。</p></div><div>{errorPatterns.map(([title,risk,fix], index) => <article key={title}><span>{String(index+1).padStart(2,"0")}</span><h3>{title}</h3><p>{risk}</p><b>纠正：{fix}</b></article>)}</div></section>
           </section>
         )}
 
@@ -402,12 +478,13 @@ export default function LearningWorkspace() {
                 <section><span>2015 原始框架</span><p>{activeRule.original}</p></section>
                 <section className="current-guidance"><span>当前通用使用提示</span><p>{activeRule.current}</p></section>
                 <section className="pitfall-guidance"><span>高风险误用</span><p>{activeRule.pitfalls}</p></section>
-                <div className="detail-source"><span>主要依据</span><b>{activeRule.source}</b><small>证据快照：2026-08-13</small></div>
+                <div className="detail-source"><span>主要依据</span><b>{activeRule.source}</b><small>证据快照：2026-08-14</small></div>
                 <div className="detail-actions"><button className="secondary" onClick={() => navigate("case")}>在病例中练习</button><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">打开ClinGen现行汇总 ↗</a></div>
               </article>
             </div>
             <section className="combination-panel"><div><span className="eyebrow">COMBINATION RULES</span><h2>五级分类组合速查</h2><p>这是ACMG/AMP 2015表5的压缩提示。采用强度调整、VCEP规范或贝叶斯/计分化框架时，应使用对应规范的完整组合方法。</p></div><div>{combinationRows.map(([label, body]) => <article key={label}><b>{label}</b><p>{body}</p></article>)}</div></section>
             <section className="evidence-workbench"><div className="workbench-intro"><span className="eyebrow">COMBINATION PRACTICE</span><h2>证据组合练习台</h2><p>点击加入证据，观察ACMG/AMP表5组合结果。练习台采用代码原始强度，但按ClinGen通用建议将PM2作为支持级；暂不模拟其他代码的升降级。实际工作以适用VCEP的强度与组合规则为准。</p><div className={`workbench-result ${workbenchResult.tone}`}><span>当前结果</span><strong>{workbenchResult.label}</strong><p>{workbenchResult.reason}</p></div><button onClick={() => setWorkbench([])}>清空组合</button></div><div className="workbench-codes">{evidenceRules.map(rule => <button className={`${workbench.includes(rule.code) ? "selected" : ""} ${rule.direction === "致病" ? "pathogenic" : "benign"}`} disabled={rule.status === "不建议使用"} onClick={() => setWorkbench(workbench.includes(rule.code) ? workbench.filter(code => code !== rule.code) : [...workbench, rule.code])} key={rule.code}><b>{rule.code}</b><span>{rule.code === "PM2" ? "支持（ClinGen通用）" : rule.strength}</span></button>)}</div></section>
+            <section className="evidence-drills"><div className="drill-index"><span className="eyebrow">EVIDENCE ASSIGNMENT · {drillCorrectCount}/{evidenceDrills.length}</span><h2>证据赋分专项</h2><p>不仅选代码，还必须写至少20字理由。完成后才揭示答案与高风险误区。</p>{evidenceDrills.map((drill,index) => <button className={`${drillIndex === index ? "active" : ""} ${drillCompleted.includes(drill.id) ? "done" : ""}`} onClick={() => setDrillIndex(index)} key={drill.id}><span>{drillCompleted.includes(drill.id) ? "✓" : index+1}</span>{drill.title}</button>)}</div><article className="drill-workspace"><span>SCENARIO {drillIndex+1}</span><h2>{activeDrill.title}</h2><p className="drill-stem">{activeDrill.stem}</p><div className="drill-options">{activeDrill.options.map(option => <button className={drillAnswers[activeDrill.id] === option ? "selected" : ""} onClick={() => setDrillAnswers({...drillAnswers,[activeDrill.id]:option})} key={option}>{option}</button>)}</div><label><span>证据理由</span><textarea value={drillRationales[activeDrill.id] ?? ""} onChange={event => setDrillRationales({...drillRationales,[activeDrill.id]:event.target.value})} placeholder="说明适用条件、强度、数据质量与可能反证（至少20字）……"/></label><button className="primary" disabled={!drillAnswers[activeDrill.id] || (drillRationales[activeDrill.id] ?? "").length < 20} onClick={completeDrill}>提交并揭示</button>{drillCompleted.includes(activeDrill.id) && <Feedback ok={activeDrill.expected.includes(drillAnswers[activeDrill.id])}>{activeDrill.explanation}<br/>高风险误区：{activeDrill.risk}</Feedback>}</article></section>
             <section className="revision-map"><h2>ClinGen通用修订地图</h2><div><article><b>人群</b><p>BA1例外列表；PM2降为支持；gnomAD v4使用指导。</p></article><article><b>机制与剪接</b><p>PVS1决策树；PVS1/PS1/PP3/BP4/BP7剪接框架。</p></article><article><b>病例与家系</b><p>PS2/PM6计点；PM3反式计点；PP1/BS4与PP4。</p></article><article><b>功能与计算</b><p>PS3/BS3实验质量；PP3/BP4工具校准。</p></article><article><b>来源型证据</b><p>PP5/BP6不建议使用，应回溯底层证据。</p></article><article><b>分类框架</b><p>强度改名规范；贝叶斯模型；自然尺度计分系统。</p></article></div></section>
             <div className="sources-panel"><h2>主版本与原始来源</h2><ul><li><a href="https://www.acmg.net/docs/standards_guidelines_for_the_interpretation_of_sequence_variants.pdf" target="_blank" rel="noreferrer">ACMG/AMP序列变异解读指南（2015，原始28条标准及组合表）</a></li><li><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">ClinGen Variant Classification Guidance（页面标注最后更新：2025-07）</a></li><li><a href="https://www.clinicalgenome.org/curation-activities/variant-pathogenicity/documents/" target="_blank" rel="noreferrer">ClinGen变异致病性文件与VCEP规范</a></li><li><a href="https://varnomen.hgvs.org/" target="_blank" rel="noreferrer">HGVS Nomenclature Recommendations</a></li></ul><p>本页是教学用工作手册，不替代实验室SOP或基因/疾病特异规范。动态资源须在每次真实解读时重新核查。</p></div>
           </section>
@@ -419,7 +496,7 @@ export default function LearningWorkspace() {
               <button className="back" onClick={() => navigate("dashboard")}>← 返回学习台</button>
               <span className="eyebrow">CASE 001 · 公开证据教学病例</span><h1>Noonan综合征</h1><p>三联体WES · GRCh38</p>
               <ol>{caseSteps.map((item, index) => <li className={index === step ? "current" : index < step ? "done" : ""} key={item}><button onClick={() => index <= step && setStep(index)}><span>{index < step ? "✓" : index + 1}</span>{item}</button></li>)}</ol>
-              <div className="snapshot"><b>证据快照</b><span>2026-08-13</span><small>答案按该日期锁定</small></div>
+              <div className="snapshot"><b>证据快照</b><span>2026-08-14</span><small>答案按该日期锁定</small></div>
             </aside>
             <div className="case-main">
               <div className="case-status"><span>步骤 {step + 1} / 7</span><div><i style={{ width: `${((step + 1) / 7) * 100}%` }} /></div></div>
@@ -429,7 +506,7 @@ export default function LearningWorkspace() {
               {step === 3 && <CaseBlock title="候选变异比较" lead="候选列表是教学用精简结果，暂不代表完整VCF过滤。"><div className="variant-table"><div className="head"><span>基因 / 变异</span><span>遗传</span><span>质量</span><span>表型</span></div><div className="selected"><span><b>PTPN11</b><small>NM_002834.5:c.922A&gt;G<br/>p.(Asn308Asp)</small></span><span>de novo<br/>杂合</span><span>DP 86<br/>VAF 0.51</span><span>强匹配</span></div><div><span><b>USH2A</b><small>杂合错义</small></span><span>父源</span><span>通过</span><span>不匹配</span></div><div><span><b>TTN</b><small>杂合错义</small></span><span>母源</span><span>通过</span><span>弱匹配</span></div></div><PromptBox>PTPN11变异位于GRCh38 chr12:112477719，MANE Select转录本为NM_002834.5。ClinVar中由RASopathy专家组评审为致病。</PromptBox></CaseBlock>}
               {step === 4 && <CaseBlock title="证据赋值" lead="请选择能由当前公开证据支持的代码；注意不重复计算。"><div className="evidence-picker">{evidenceOptions.map(item => <button className={answer.evidence.includes(item) ? "chosen" : ""} onClick={() => toggleEvidence(item)} key={item}>{item}<span>{answer.evidence.includes(item) ? "✓" : "+"}</span></button>)}</div>{checked && <Feedback ok={answer.evidence.includes("PS2_VeryStrong") && answer.evidence.includes("PS3")}>专家组历史分类使用PS2_VeryStrong、PS3、PP1_Strong、PP3等证据。PM2在现有人群数据中需要按最新数据和当前规范重新判断，不能照抄2017年的ExAC结论；PP4也需避免与病例选择造成重复强化。</Feedback>}<div className="citation-note"><b>教学要点</b><p>本题展示“读取专家组既有分类”，不是让单个新病例重复创造PS2_VeryStrong。提交日期、患者是否重复、功能实验质量都必须核查。</p></div></CaseBlock>}
               {step === 5 && <CaseBlock title="综合分类" lead="分类针对PTPN11—Noonan综合征这一明确疾病关系。"><ChoiceRow options={[['Pathogenic','致病'],['Likely pathogenic','可能致病'],['VUS','意义未明'],['Likely benign','可能良性']]} value={answer.classification} onChange={(value) => setAnswer({...answer, classification:value})}/>{checked && <Feedback ok={answer.classification === "Pathogenic"}>{answer.classification === "Pathogenic" ? "与ClinGen RASopathy VCEP专家组结论一致：Pathogenic。" : "该变异已有ClinGen专家组针对Noonan综合征的致病分类；应优先核查并采用适用的VCEP规范。"}</Feedback>}<div className="three-levels"><div><span>1</span><b>变异</b><p>对Noonan综合征为致病</p></div><div><span>2</span><b>疾病关系</b><p>PTPN11—Noonan：明确</p></div><div><span>3</span><b>病例相关性</b><p>遗传模式与表型高度匹配</p></div></div></CaseBlock>}
-              {step === 6 && <CaseBlock title="报告撰写" lead="用限定清晰、可追溯的语言完成病例级结论。"><textarea value={answer.report} onChange={(event) => setAnswer({...answer, report:event.target.value})} placeholder="建议包含：检测发现、转录本与HGVS、合子状态和来源、分类与证据摘要、表型相关性、验证及遗传咨询提示……"/><div className="report-checks"><span className={answer.report.includes("PTPN11") ? "met" : ""}>PTPN11</span><span className={answer.report.includes("c.922") ? "met" : ""}>完整HGVS</span><span className={answer.report.length >= 60 ? "met" : ""}>结论充分</span><span className={answer.report.includes("验证") ? "met" : ""}>验证建议</span></div>{checked && <Feedback ok={answer.report.length >= 60}>参考表达：检测到PTPN11基因NM_002834.5:c.922A&gt;G [p.(Asn308Asp)]杂合变异，三联体结果支持新生来源。该变异经ClinGen RASopathy专家组评审为致病，患者表型及遗传模式与Noonan综合征高度吻合，支持建立分子诊断。建议结合临床表现，按实验室流程确认变异及亲缘关系并进行遗传咨询。</Feedback>}</CaseBlock>}
+              {step === 6 && <CaseBlock title="报告撰写" lead="用限定清晰、可追溯的语言完成病例级结论。"><textarea value={answer.report} onChange={(event) => setAnswer({...answer, report:event.target.value})} placeholder="建议包含：检测发现、转录本与HGVS、合子状态和来源、分类与证据摘要、表型相关性、验证及遗传咨询提示……"/><div className="report-checks"><span className={answer.report.includes("PTPN11") ? "met" : ""}>PTPN11</span><span className={answer.report.includes("c.922") ? "met" : ""}>完整HGVS</span><span className={answer.report.length >= 60 ? "met" : ""}>结论充分</span><span className={answer.report.includes("验证") ? "met" : ""}>验证建议</span><span className={noonanReportGrade.total >= 80 ? "met" : ""}>六维评分 {noonanReportGrade.total}</span></div>{checked && <Feedback ok={noonanReportGrade.total >= 80}>参考表达：检测到PTPN11基因NM_002834.5:c.922A&gt;G [p.(Asn308Asp)]杂合变异，三联体结果支持新生来源。该变异经ClinGen RASopathy专家组评审为致病，患者表型及遗传模式与Noonan综合征高度吻合，支持建立分子诊断。建议结合临床表现，按实验室流程确认变异及亲缘关系并进行遗传咨询。</Feedback>}</CaseBlock>}
               <div className="case-actions"><button className="secondary" disabled={step === 0} onClick={() => {setStep(Math.max(0, step - 1));setChecked(false)}}>上一步</button><button className="check" onClick={() => setChecked(true)}>检查本步</button><button className="primary" disabled={step === 6} onClick={() => {setStep(Math.min(6, step + 1));setChecked(false)}}>保存并继续 →</button></div>
               {step === 6 && checked && <div className="score-card"><span>本次练习得分</span><strong>{score}</strong><small>/ 100</small><p>这是规则化形成性评价，不代表职业资质或临床授权。</p></div>}
             </div>
@@ -443,7 +520,7 @@ export default function LearningWorkspace() {
               <span className="eyebrow">CASE 002 · 教学重组病例</span><h1>PAH缺乏症</h1><p>三联体WES · GRCh38 · 复合杂合</p>
               <div className="synthetic-badge"><b>证据边界</b><span>变异与专家分类来自公开真实记录；个案数值、父母来源和相位为教学重组，不对应单一真实患者。</span></div>
               <ol>{pahSteps.map((item, index) => <li className={index === pahStep ? "current" : index < pahStep ? "done" : ""} key={item}><button onClick={() => index <= pahStep && setPahStep(index)}><span>{index < pahStep ? "✓" : index + 1}</span>{item}</button></li>)}</ol>
-              <div className="snapshot"><b>证据快照</b><span>2026-08-13</span><small>答案按该日期锁定</small></div>
+              <div className="snapshot"><b>证据快照</b><span>2026-08-14</span><small>答案按该日期锁定</small></div>
             </aside>
             <div className="case-main">
               <div className="case-status"><span>步骤 {pahStep + 1} / 7</span><div><i style={{ width: `${((pahStep + 1) / 7) * 100}%` }} /></div></div>
@@ -490,8 +567,8 @@ export default function LearningWorkspace() {
 
               {pahStep === 6 && <CaseBlock title="报告与形成性评分" lead="报告必须同时写清两条变异、相位、分别分类和病例级限定。">
                 <textarea value={pahAnswer.report} onChange={(event) => setPahAnswer({...pahAnswer, report:event.target.value})} placeholder="建议包含：PAH、NM_000277.3、两条c./p.描述、杂合与父母来源、反式、分别分类及依据、生化相关性、验证/咨询与检测边界……"/>
-                <div className="report-checks"><span className={pahAnswer.report.includes("PAH") ? "met" : ""}>PAH</span><span className={pahAnswer.report.includes("c.1222") ? "met" : ""}>变异A HGVS</span><span className={pahAnswer.report.includes("c.1246") ? "met" : ""}>变异B HGVS</span><span className={pahAnswer.report.includes("反式") ? "met" : ""}>相位</span><span className={pahAnswer.report.length >= 100 ? "met" : ""}>≥100字</span></div>
-                {checked && <Feedback ok={pahAnswer.report.length >= 100 && pahAnswer.report.includes("PAH") && pahAnswer.report.includes("c.1222") && pahAnswer.report.includes("c.1246")}>参考结构：教学个案检出PAH基因NM_000277.3:c.1222C&gt;T [p.(Arg408Trp)]与c.1246C&gt;A [p.(Pro416Thr)]杂合变异，分别来自母亲与父亲，支持反式。两变异经PAH VCEP分别评为致病和可能致病；结合持续高苯丙氨酸血症及鉴别检查，结果支持PAH缺乏症的分子诊断。建议按实验室流程确认并结合代谢专科评估及遗传咨询。</Feedback>}
+                <div className="report-checks"><span className={pahAnswer.report.includes("PAH") ? "met" : ""}>PAH</span><span className={pahAnswer.report.includes("c.1222") ? "met" : ""}>变异A HGVS</span><span className={pahAnswer.report.includes("c.1246") ? "met" : ""}>变异B HGVS</span><span className={pahAnswer.report.includes("反式") ? "met" : ""}>相位</span><span className={pahAnswer.report.length >= 100 ? "met" : ""}>≥100字</span><span className={pahReportGrade.total >= 80 ? "met" : ""}>六维评分 {pahReportGrade.total}</span></div>
+                {checked && <Feedback ok={pahReportGrade.total >= 80}>参考结构：教学个案检出PAH基因NM_000277.3:c.1222C&gt;T [p.(Arg408Trp)]与c.1246C&gt;A [p.(Pro416Thr)]杂合变异，分别来自母亲与父亲，支持反式。两变异经PAH VCEP分别评为致病和可能致病；结合持续高苯丙氨酸血症及鉴别检查，结果支持PAH缺乏症的分子诊断。建议按实验室流程确认并结合代谢专科评估及遗传咨询。</Feedback>}
                 <div className="case-sources"><b>本例原始依据</b><a href="https://www.ncbi.nlm.nih.gov/books/NBK1504/" target="_blank" rel="noreferrer">GeneReviews：PAH Deficiency（2025修订）↗</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/577/" target="_blank" rel="noreferrer">ClinVar：c.1222C&gt;T专家组记录 ↗</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/987913/" target="_blank" rel="noreferrer">ClinVar：c.1246C&gt;A专家组记录 ↗</a></div>
               </CaseBlock>}
 
@@ -501,17 +578,110 @@ export default function LearningWorkspace() {
           </section>
         )}
 
+        {view === "case" && activeCaseId === "003" && <LdlrCase onBack={() => navigate("library")} onScore={value => setAdditionalCaseScores(current => current["003"] === value ? current : {...current,"003":value})} />}
+        {view === "case" && activeCaseId === "004" && <NegativeCase onBack={() => navigate("library")} onScore={value => setAdditionalCaseScores(current => current["004"] === value ? current : {...current,"004":value})} />}
+        {view === "case" && boundaryCases.some(item => item.id === activeCaseId) && <BoundaryCase definition={boundaryCases.find(item => item.id === activeCaseId)!} onBack={() => navigate("library")} onScore={value => setAdditionalCaseScores(current => current[activeCaseId] === value ? current : {...current,[activeCaseId]:value})} />}
+
         {view === "roadmap" && (
           <section className="page-section roadmap">
-            <div className="page-intro"><span className="eyebrow">COMPETENCY MAP</span><h1>独立解读能力地图</h1><p>认证只表示站内训练水平，不等同于临床遗传学职业资格。</p></div>
-            <div className="level-list"><article><span>L1</span><div><h2>基础识别</h2><p>理解遗传模式、HGVS、检测边界和五级分类。</p></div><b>当前</b></article><article><span>L2</span><div><h2>证据评估</h2><p>能判断单条证据的适用性、强度和重复计分风险。</p></div><b>待解锁</b></article><article><span>L3</span><div><h2>病例解读</h2><p>完成候选比较、基因—疾病核查、分类与病例相关性判断。</p></div><b>待解锁</b></article><article><span>L4</span><div><h2>综合报告</h2><p>在限时盲态病例中完成完整、克制且可追溯的报告。</p></div><b>待解锁</b></article></div>
+            <div className="page-intro"><span className="eyebrow">COMPETENCY MAP · LOCAL CERTIFICATION</span><h1>独立解读能力地图</h1><p>等级由课程、专项练习、病例、报告与考试共同计算；只表示站内训练水平，不等同于职业资格或临床授权。</p></div>
+            <div className="competency-summary"><div><span>课程</span><b>{lessonDone.length}/24</b></div><div><span>证据专项</span><b>{drillCorrectCount}/6</b></div><div><span>八例得分</span><b>{scoredCases.join(" · ")}</b></div><div><span>报告最高分</span><b>{reportBestScore}</b></div></div>
+            <div className="level-list"><article className={certification.L1 ? "unlocked" : ""}><span>L1</span><div><h2>基础识别</h2><p>完成≥6课，L1测验≥80。当前：{lessonDone.length}/6课，测验{examResults.L1 ?? 0}/80。</p></div><b>{certification.L1 ? "已获得" : "未满足"}</b></article><article className={certification.L2 ? "unlocked" : ""}><span>L2</span><div><h2>证据评估</h2><p>完成≥16课、L2≥80、专项≥5/6，四个病例均≥70。当前：{lessonDone.length}/16 · {examResults.L2 ?? 0}/80 · {drillCorrectCount}/5。</p></div><b>{certification.L2 ? "已获得" : "未满足"}</b></article><article className={certification.L3 ? "unlocked" : ""}><span>L3</span><div><h2>病例与报告整合</h2><p>完成24课、L3≥80、报告≥80，四个病例均≥85。当前：{lessonDone.length}/24 · {examResults.L3 ?? 0}/80 · 报告{reportBestScore}/80。</p></div><b>{certification.L3 ? "已获得" : "未满足"}</b></article></div>
+            {certification.L3 && <div className="certificate-card"><span>VARIANT ATLAS · INTERNAL LEARNING RECORD</span><h2>L3 病例与报告整合</h2><p>已达到本站当前课程、证据专项、病例与报告训练要求。该记录保存在本机，不代表职业资质。</p><button className="primary" onClick={() => window.print()}>打印学习记录</button></div>}
             <div className="warning-panel"><b>高风险错误</b><p>把VUS作为确诊依据 · 复制数据库结论而不核查 · 使用错误转录本 · 同一证据重复计分 · 忽略反证 · 阴性结果声称排除遗传病</p></div>
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v0.4</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.0 基础版</span></footer>
     </div>
   );
+}
+
+function LdlrCase({ onBack, onScore }: { onBack: () => void; onScore: (value: number) => void }) {
+  const steps = ["临床与家系", "遗传模式", "变异规范化", "PVS1强度", "证据审计", "冲突与分类", "报告撰写"];
+  const evidence = ["PVS1_Strong","PS4","PP1_Strong","PM2","PS3_Moderate","PP4"];
+  const [step, setStep] = useState(0);
+  const [checked, setChecked] = useState(false);
+  const [answer, setAnswer] = useState<LdlrAnswer>({ inheritance:"", pvs1:"", evidence:[], classification:"", conflict:"", report:"" });
+
+  useEffect(() => {
+    const saved=window.localStorage.getItem("variant-atlas-case003");
+    if (saved) try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the local case draft once
+      setAnswer(JSON.parse(saved).answer ?? { inheritance:"", pvs1:"", evidence:[], classification:"", conflict:"", report:"" });
+    } catch { /* ignore damaged local draft */ }
+  }, []);
+  useEffect(() => { window.localStorage.setItem("variant-atlas-case003",JSON.stringify({answer})); },[answer]);
+
+  const reportChecks = [answer.report.includes("LDLR"),answer.report.includes("c.313+1"),answer.report.includes("杂合"),answer.report.includes("致病"),answer.report.includes("家系") || answer.report.includes("遗传咨询")];
+  const score = Math.min(100,(answer.inheritance === "AD" ? 10 : 0)+(answer.pvs1 === "PVS1_Strong" ? 15 : 0)+evidence.filter(code => answer.evidence.includes(code)).length*5+(answer.classification === "Pathogenic" ? 15 : 0)+(answer.conflict === "expert" ? 10 : 0)+reportChecks.filter(Boolean).length*4);
+  const toggle=(code:string) => setAnswer({...answer,evidence:answer.evidence.includes(code) ? answer.evidence.filter(item => item !== code) : [...answer.evidence,code]});
+
+  return <section className="case-workspace ldlr-case"><aside className="case-sidebar"><button className="back" onClick={onBack}>← 返回病例库</button><span className="eyebrow">CASE 003 · 教学重组病例</span><h1>家族性高胆固醇血症</h1><p>先证者WES · GRCh38 · 家系验证</p><div className="synthetic-badge"><b>证据边界</b><span>LDLR变异、专家分类、RNA及病例证据来自公开记录；个案血脂与家系组合为教学重组。</span></div><ol>{steps.map((item,index) => <li className={index === step ? "current" : index < step ? "done" : ""} key={item}><button onClick={() => index <= step && setStep(index)}><span>{index < step ? "✓" : index+1}</span>{item}</button></li>)}</ol><div className="snapshot"><b>证据快照</b><span>2026-08-14</span><small>答案按该日期锁定</small></div></aside><div className="case-main"><div className="case-status"><span>步骤 {step+1} / 7</span><div><i style={{width:`${((step+1)/7)*100}%`}}/></div></div>
+    {step === 0 && <CaseBlock title="临床与家系" lead="先判断是否支持家族性高胆固醇血症，再进入变异分类。"><div className="clinical-note"><b>教学重组个案</b><p>32岁男性，未治疗LDL-C 7.1 mmol/L，跟腱增厚；已排查常见继发性高胆固醇血症。父亲43岁发生心肌梗死，父系叔叔LDL-C明显升高。</p><b>问题</b><p>表型和家系支持显性家族性高胆固醇血症，但病例诊断评分与变异致病性仍需分开评价。</p></div><PromptBox>血脂数值、治疗状态、黄色瘤、早发冠心病与亲属信息都影响病例层判断。</PromptBox></CaseBlock>}
+    {step === 1 && <CaseBlock title="遗传模式" lead="选择LDLR相关家族性高胆固醇血症的主要模式。"><ChoiceRow options={[["AD","常染色体显性"],["AR","常染色体隐性"],["XL","X连锁"],["MT","线粒体"]]} value={answer.inheritance} onChange={value => setAnswer({...answer,inheritance:value})}/>{checked && <Feedback ok={answer.inheritance === "AD"}>LDLR相关家族性高胆固醇血症通常为常染色体显性；家系中的垂直传递与早发冠心病支持该模型。</Feedback>}</CaseBlock>}
+    {step === 2 && <CaseBlock title="变异规范化" lead="确认参考组装、MANE转录本、链方向和剪接位置。"><div className="variant-table"><div className="head"><span>基因 / 变异</span><span>合子状态</span><span>GRCh38</span><span>来源</span></div><div className="selected"><span><b>LDLR</b><small>NM_000527.5:c.313+1G&gt;A<br/>预测蛋白后果不应写成已证实单一结果</small></span><span>杂合</span><span>chr19:<br/>11102787 G&gt;A</span><span>父源</span></div></div><div className="citation-note"><b>版本提醒</b><p>专家组2021记录使用NM_000527.4；ClinVar当前MANE Select为NM_000527.5。c.313+1G&gt;A在两版本中一致，报告仍应写明所用版本。</p></div></CaseBlock>}
+    {step === 3 && <CaseBlock title="PVS1为什么是Strong" lead="经典+1剪接变异也不能跳过PVS1决策树。"><ChoiceRow options={[["PVS1_VeryStrong","极强"],["PVS1_Strong","强"],["PVS1_Moderate","中等"],["NoPVS1","不使用"]]} value={answer.pvs1} onChange={value => setAnswer({...answer,pvs1:value})}/>{checked && <Feedback ok={answer.pvs1 === "PVS1_Strong"}>FH VCEP使用PVS1_Strong：变异破坏经典+1供体位点，预测外显子3跳跃且为框内改变；不能仅因位于+1就给极强。</Feedback>}<div className="citation-note warning-note"><b>关键边界</b><p>RNA结果还显示异常剪接与受体功能下降，但同一底层剪接数据如何与PVS1、PS3组合必须按FH VCEP规范，不能机械重复。</p></div></CaseBlock>}
+    {step === 4 && <CaseBlock title="专家证据审计" lead="选择FH VCEP在该变异记录中使用的完整代码与强度。"><div className="evidence-picker">{[...evidence,"PVS1_VeryStrong","PP3"].map(code => <button className={answer.evidence.includes(code) ? "chosen" : ""} onClick={() => toggle(code)} key={code}>{code}<span>{answer.evidence.includes(code) ? "✓" : "+"}</span></button>)}</div>{checked && <Feedback ok={evidence.every(code => answer.evidence.includes(code)) && !answer.evidence.includes("PVS1_VeryStrong")}>FH VCEP记录为PVS1_Strong、PS4、PP1_Strong、PM2、PS3_Moderate和PP4。RNA/FACS支持PS3_Moderate；病例与共分离证据必须注意患者去重。</Feedback>}</CaseBlock>}
+    {step === 5 && <CaseBlock title="冲突层级与综合分类" lead="ClinVar曾有单个较旧提交给出不同结论；不要按提交数量简单投票。"><ChoiceRow options={[["expert","优先审计专家组及底层证据"],["vote","按提交数量多数票"],["latest","只看最近提交"],["vus","有冲突就自动VUS"]]} value={answer.conflict} onChange={value => setAnswer({...answer,conflict:value})}/><ChoiceRow options={[["Pathogenic","致病"],["Likely pathogenic","可能致病"],["VUS","意义未明"],["Likely benign","可能良性"]]} value={answer.classification} onChange={value => setAnswer({...answer,classification:value})}/>{checked && <Feedback ok={answer.conflict === "expert" && answer.classification === "Pathogenic"}>ClinGen FH VCEP针对家族性高胆固醇血症评为Pathogenic。应审计专家组规范和底层证据，同时理解旧冲突来源，而非机械投票。</Feedback>}</CaseBlock>}
+    {step === 6 && <CaseBlock title="报告撰写" lead="把变异、家系、病例相关性和建议写成可追溯结论。"><textarea value={answer.report} onChange={event => setAnswer({...answer,report:event.target.value})} placeholder="至少包含LDLR、NM_000527.5:c.313+1G>A、杂合与父源、专家组分类、家系/表型相关性、验证和遗传咨询……"/><div className="report-checks"><span className={reportChecks[0] ? "met" : ""}>LDLR</span><span className={reportChecks[1] ? "met" : ""}>HGVS</span><span className={reportChecks[2] ? "met" : ""}>合子状态</span><span className={reportChecks[3] ? "met" : ""}>分类</span><span className={reportChecks[4] ? "met" : ""}>家系/咨询</span></div>{checked && <Feedback ok={reportChecks.every(Boolean)}>参考结构：检出LDLR NM_000527.5:c.313+1G&gt;A杂合变异，家系验证提示父源。该变异经ClinGen FH VCEP评为致病；患者血脂与家系符合LDLR相关显性家族性高胆固醇血症，结果支持分子诊断。建议按流程确认、开展家系检测与遗传咨询，并由相关专科评估管理。</Feedback>}<div className="case-sources"><b>本例原始依据</b><a href="https://www.ncbi.nlm.nih.gov/clinvar/RCV000003934/" target="_blank" rel="noreferrer">ClinVar专家组记录 ↗</a><a href="https://www.ncbi.nlm.nih.gov/books/NBK174884/" target="_blank" rel="noreferrer">GeneReviews：Familial Hypercholesterolemia ↗</a></div></CaseBlock>}
+    <div className="case-actions"><button className="secondary" disabled={step === 0} onClick={() => {setStep(Math.max(0,step-1));setChecked(false)}}>上一步</button><button className="check" onClick={() => {setChecked(true);if(step === 6) onScore(score)}}>检查本步</button><button className="primary" disabled={step === 6} onClick={() => {setStep(Math.min(6,step+1));setChecked(false)}}>保存并继续 →</button></div>{step === 6 && checked && <div className="score-card"><span>CASE 003 形成性得分</span><strong>{score}</strong><small>/100</small><div className="score-breakdown"><span>模式 10</span><span>PVS1 15</span><span>证据 30</span><span>分类 15</span><span>冲突 10</span><span>报告 20</span></div><p>个案信息为教学重组，不能作为新的病例证据提交或计分。</p></div>}
+  </div></section>;
+}
+
+function NegativeCase({ onBack, onScore }: { onBack: () => void; onScore: (value: number) => void }) {
+  const steps=["异常复核","单等位结果","病例结论","检测升级","鉴别诊断","阴性报告","重分析计划"];
+  const [step,setStep]=useState(0);
+  const [checked,setChecked]=useState(false);
+  const [answer,setAnswer]=useState<NegativeAnswer>({interpretation:"",nextTest:"",differential:[],report:"",reanalysis:""});
+  useEffect(() => {
+    const saved=window.localStorage.getItem("variant-atlas-case004");
+    if (saved) try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the local case draft once
+      setAnswer(JSON.parse(saved).answer ?? {interpretation:"",nextTest:"",differential:[],report:"",reanalysis:""});
+    } catch { /* ignore damaged draft */ }
+  },[]);
+  useEffect(() => { window.localStorage.setItem("variant-atlas-case004",JSON.stringify({answer})); },[answer]);
+  const toggle=(item:string) => setAnswer({...answer,differential:answer.differential.includes(item) ? answer.differential.filter(value => value !== item) : [...answer.differential,item]});
+  const reportChecks=[answer.report.includes("PAH"),answer.report.includes("c.1222"),answer.report.includes("杂合"),answer.report.includes("不足") || answer.report.includes("不能"),answer.report.includes("限制") || answer.report.includes("缺失")];
+  const score=(answer.interpretation === "unresolved" ? 20 : 0)+(answer.nextTest === "deldup" ? 20 : 0)+["BH4","panel"].filter(item => answer.differential.includes(item)).length*10+reportChecks.filter(Boolean).length*6+(answer.reanalysis === "targeted" ? 10 : 0);
+  return <section className="case-workspace negative-case"><aside className="case-sidebar"><button className="back" onClick={onBack}>← 返回病例库</button><span className="eyebrow">CASE 004 · 教学重组阴性病例</span><h1>单等位基因结果</h1><p>PAH · AR · WES未完全解释</p><div className="synthetic-badge"><b>证据边界</b><span>真实公开致病变异与GeneReviews检测路径；生化数值和个案组合为教学重组。</span></div><ol>{steps.map((item,index) => <li className={index === step ? "current" : index < step ? "done" : ""} key={item}><button onClick={() => index <= step && setStep(index)}><span>{index < step ? "✓" : index+1}</span>{item}</button></li>)}</ol><div className="snapshot"><b>证据快照</b><span>2026-08-14</span><small>不把阴性写成排除</small></div></aside><div className="case-main"><div className="case-status"><span>步骤 {step+1} / 7</span><div><i style={{width:`${((step+1)/7)*100}%`}}/></div></div>
+    {step === 0 && <CaseBlock title="持续高苯丙氨酸血症" lead="异常筛查先完成生化复核，分子阴性不能替代鉴别诊断。"><div className="clinical-note"><b>教学重组个案</b><p>新生儿筛查异常，复查Phe 410 μmol/L、Phe:Tyr 4.0；采样前未限制苯丙氨酸。初始WES未报告其他明确候选。</p><b>分析目标</b><p>判断一条PAH致病等位基因能否解释病例，并制定针对性升级路径。</p></div></CaseBlock>}
+    {step === 1 && <CaseBlock title="只检出一条真实致病等位基因" lead="变异分类正确，不代表病例基因型完整。"><div className="allele-pair"><article><span>已检出</span><h3>PAH c.1222C&gt;T</h3><p>NM_000277.3 · p.(Arg408Trp)</p><small>杂合 · ClinGen PAH VCEP：Pathogenic</small><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/577/" target="_blank" rel="noreferrer">ClinVar Variation ID 577 ↗</a></article><div className="phase-mark">+</div><article><span>另一等位基因</span><h3>未检出</h3><p>常规WES SNV/indel流程</p><small>不能据此证明另一等位基因正常</small></article></div><PromptBox>对于隐性病，单个致病等位基因通常说明携带状态或未完全解释的候选，而不是完整分子诊断。</PromptBox></CaseBlock>}
+    {step === 2 && <CaseBlock title="病例结论边界" lead="选择最稳妥的病例级结论。"><ChoiceRow options={[["diagnosed","已建立PAH缺乏症分子诊断"],["unresolved","高度可疑但分子结果未完全解释"],["carrier","仅是无关携带者"],["excluded","排除PAH缺乏症"]]} value={answer.interpretation} onChange={value => setAnswer({...answer,interpretation:value})}/>{checked && <Feedback ok={answer.interpretation === "unresolved"}>一条PAH致病变异不能满足双等位基因分子诊断；强生化表型提示继续寻找第二等位基因，同时不能把结果简化为无关携带。</Feedback>}</CaseBlock>}
+    {step === 3 && <CaseBlock title="从WES升级检测" lead="下一步应针对未覆盖机制，而不是泛泛地“扩大检测”。"><ChoiceRow options={[["deldup","PAH基因靶向缺失/重复分析"],["repeat","重复同一过滤参数"],["stop","无需进一步检测"],["predict","增加更多错义预测软件"]]} value={answer.nextTest} onChange={value => setAnswer({...answer,nextTest:value})}/>{checked && <Feedback ok={answer.nextTest === "deldup"}>GeneReviews建议：PAH序列分析只检出一条或未检出时，下一步进行基因靶向缺失/重复分析；仍未解决再考虑深内含子、非编码与其他技术路径。</Feedback>}<div className="three-levels"><div><span>95–99%</span><b>序列分析</b><p>GeneReviews所列PAH致病变异检出比例</p></div><div><span>2–3%</span><b>缺失/重复</b><p>需独立评估的致病等位基因比例</p></div><div><span>剩余</span><b>非编码/复杂机制</b><p>结合覆盖、WGS、RNA或专门方法</p></div></div></CaseBlock>}
+    {step === 4 && <CaseBlock title="高苯丙氨酸血症鉴别" lead="即使存在PAH致病等位基因，也不能跳过BH4相关缺陷。"><div className="evidence-picker">{[["BH4","蝶呤谱与DHPR活性"],["panel","高苯丙氨酸血症相关基因"],["none","无需鉴别"]].map(([key,label]) => <button className={answer.differential.includes(key) ? "chosen" : ""} onClick={() => toggle(key)} key={key}>{label}<span>{answer.differential.includes(key) ? "✓" : "+"}</span></button>)}</div>{checked && <Feedback ok={answer.differential.includes("BH4") && answer.differential.includes("panel") && !answer.differential.includes("none")}>持续高苯丙氨酸血症需通过生化或覆盖相关基因的检测排查BH4合成/再循环缺陷；单个PAH等位基因不能终止鉴别。</Feedback>}</CaseBlock>}
+    {step === 5 && <CaseBlock title="写出不误导的阴性/部分结果" lead="报告必须同时表达发现、未解决问题和检测边界。"><textarea value={answer.report} onChange={event => setAnswer({...answer,report:event.target.value})} placeholder="建议包含PAH c.1222C>T杂合致病变异、仅一条等位基因、目前不足以建立双等位分子诊断、WES限制及补充检测……"/><div className="report-checks"><span className={reportChecks[0] ? "met" : ""}>PAH</span><span className={reportChecks[1] ? "met" : ""}>HGVS</span><span className={reportChecks[2] ? "met" : ""}>杂合</span><span className={reportChecks[3] ? "met" : ""}>未确诊边界</span><span className={reportChecks[4] ? "met" : ""}>检测限制</span></div>{checked && <Feedback ok={reportChecks.every(Boolean)}>参考结构：检出PAH NM_000277.3:c.1222C&gt;T [p.(Arg408Trp)]杂合致病变异，但未检出第二条可报告等位基因，目前不足以仅据分子结果建立PAH缺乏症诊断。结合生化异常，建议补充PAH缺失/重复分析并完成BH4相关鉴别；常规WES对部分CNV、深内含子和复杂变异存在限制。</Feedback>}</CaseBlock>}
+    {step === 6 && <CaseBlock title="重分析计划" lead="把“以后再看”变成可执行的触发条件。"><ChoiceRow options={[["targeted","补充CNV/鉴别后，结合新表型和数据库版本定向重分析"],["annual","每年机械重复同一流程"],["never","阴性后不再分析"],["clinvar","只等ClinVar自动改判"]]} value={answer.reanalysis} onChange={value => setAnswer({...answer,reanalysis:value})}/>{checked && <Feedback ok={answer.reanalysis === "targeted"}>正确。先完成当前最可能解决问题的补充检测，再以新增表型、检测结果、规范/数据库更新为触发点进行可追溯重分析。</Feedback>}<div className="case-sources"><b>本例原始依据</b><a href="https://www.ncbi.nlm.nih.gov/books/NBK1504/" target="_blank" rel="noreferrer">GeneReviews：PAH Deficiency ↗</a><a href="https://www.ncbi.nlm.nih.gov/clinvar/variation/577/" target="_blank" rel="noreferrer">PAH c.1222C&gt;T专家组记录 ↗</a></div></CaseBlock>}
+    <div className="case-actions"><button className="secondary" disabled={step === 0} onClick={() => {setStep(Math.max(0,step-1));setChecked(false)}}>上一步</button><button className="check" onClick={() => {setChecked(true);if(step === 6) onScore(score)}}>检查本步</button><button className="primary" disabled={step === 6} onClick={() => {setStep(Math.min(6,step+1));setChecked(false)}}>保存并继续 →</button></div>{step === 6 && checked && <div className="score-card"><span>CASE 004 形成性得分</span><strong>{score}</strong><small>/100</small><div className="score-breakdown"><span>结论 20</span><span>升级 20</span><span>鉴别 20</span><span>报告 30</span><span>重分析 10</span></div><p>阴性或部分结果的核心能力，是准确表达残余风险并提出针对性下一步。</p></div>}
+  </div></section>;
+}
+
+function BoundaryCase({ definition, onBack, onScore }: { definition: BoundaryCaseDefinition; onBack: () => void; onScore: (value: number) => void }) {
+  const [step,setStep]=useState(0);
+  const [checked,setChecked]=useState(false);
+  const [answer,setAnswer]=useState<{choices:Record<string,string>;report:string}>({choices:{},report:""});
+  const storageKey=`variant-atlas-case${definition.id}`;
+
+  useEffect(() => {
+    const saved=window.localStorage.getItem(storageKey);
+    if (saved) try {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate this case draft when the selected case changes
+      setAnswer(JSON.parse(saved).answer ?? {choices:{},report:""});
+    } catch { /* ignore damaged local draft */ }
+  },[storageKey]);
+  useEffect(() => { window.localStorage.setItem(storageKey,JSON.stringify({answer})); },[answer,storageKey]);
+
+  const activeStep=definition.steps[step];
+  const reportChecks=definition.reportChecks.map(([label,keywords]) => ({label,met:keywords.some(keyword => answer.report.includes(keyword))}));
+  const score=definition.steps.filter((item,index) => answer.choices[String(index)] === item.answer).length*12+reportChecks.filter(item => item.met).length*7;
+  const stepNames=[...definition.steps.map(item => item.title),"报告撰写"];
+
+  return <section className="case-workspace boundary-case"><aside className="case-sidebar"><button className="back" onClick={onBack}>← 返回病例库</button><span className="eyebrow">CASE {definition.id} · 证据核查病例</span><h1>{definition.title}</h1><p>{definition.subtitle}</p><div className="synthetic-badge"><b>证据边界</b><span>{definition.sourceBoundary}</span></div><ol>{stepNames.map((item,index) => <li className={index === step ? "current" : index < step ? "done" : ""} key={item}><button onClick={() => index <= step && setStep(index)}><span>{index < step ? "✓" : index+1}</span>{item}</button></li>)}</ol><div className="snapshot"><b>证据快照</b><span>2026-08-14</span><small>公开来源可从末步回溯</small></div></aside><div className="case-main"><div className="case-status"><span>步骤 {step+1} / 7</span><div><i style={{width:`${((step+1)/7)*100}%`}}/></div></div>
+    {step < 6 && <CaseBlock title={activeStep.title} lead={activeStep.lead}><div className="clinical-note"><b>{definition.gene}</b><p>{activeStep.stem}</p></div><ChoiceRow options={activeStep.options} value={answer.choices[String(step)] ?? ""} onChange={value => setAnswer({...answer,choices:{...answer.choices,[String(step)]:value}})}/>{checked && <Feedback ok={answer.choices[String(step)] === activeStep.answer}>{activeStep.feedback}</Feedback>}</CaseBlock>}
+    {step === 6 && <CaseBlock title="报告撰写" lead={definition.reportPrompt}><textarea value={answer.report} onChange={event => setAnswer({...answer,report:event.target.value})} placeholder={definition.reportPrompt}/><div className="report-checks">{reportChecks.map(item => <span className={item.met ? "met" : ""} key={item.label}>{item.label}</span>)}</div>{checked && <Feedback ok={reportChecks.every(item => item.met)}>{definition.reportExample}</Feedback>}<div className="case-sources"><b>本例原始依据</b>{definition.sources.map(source => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.label} ↗</a>)}</div></CaseBlock>}
+    <div className="case-actions"><button className="secondary" disabled={step === 0} onClick={() => {setStep(Math.max(0,step-1));setChecked(false)}}>上一步</button><button className="check" onClick={() => {setChecked(true);if(step === 6) onScore(score)}}>检查本步</button><button className="primary" disabled={step === 6 || !answer.choices[String(step)]} onClick={() => {setStep(Math.min(6,step+1));setChecked(false)}}>保存并继续 →</button></div>{step === 6 && checked && <div className="score-card"><span>CASE {definition.id} 形成性得分</span><strong>{score}</strong><small>/100</small><div className="score-breakdown"><span>六步判断 72</span><span>报告要素 28</span></div><p>本得分用于学习反馈；公开证据与教学重组信息已分别标注。</p></div>}
+  </div></section>;
 }
 
 function CaseBlock({ title, lead, children }: { title: string; lead: string; children: React.ReactNode }) {
@@ -525,6 +695,19 @@ function ChoiceRow({ options, value, onChange }: { options: string[][]; value: s
 }
 
 function Feedback({ ok, children }: { ok: boolean; children: React.ReactNode }) { return <div className={`feedback ${ok ? "good" : "review"}`}><b>{ok ? "判断通过" : "建议复核"}</b><p>{children}</p></div>; }
+
+function gradeReport(template: (typeof reportTemplates)[number], draft: string) {
+  const weights = [18,17,17,16,16,16];
+  const includes = (term: string) => draft.toLowerCase().includes(term.toLowerCase());
+  const dimensions = template.required.map((label, index) => {
+    const words = template.keywords[index];
+    let met = words.some(includes);
+    if ((template.id === "ad" && index <= 2) || (template.id === "ar" && (index === 0 || index === 1 || index === 2 || index === 4))) met = words.every(includes);
+    if (template.id === "vus" && index === 0) met = includes("致病") && (includes("VUS") || includes("意义未明"));
+    return { label, met, score: met ? weights[index] : 0, hint: met ? "已识别到必要信息" : `建议补充：${words.join(" / ")}` };
+  });
+  return { dimensions, total: dimensions.reduce((sum, item) => sum + item.score, 0) };
+}
 
 function classifyTraditional(codes: string[]) {
   const has = (code: string) => codes.includes(code);
