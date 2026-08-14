@@ -39,7 +39,7 @@ test("server-renders the Variant Atlas learning workspace", async () => {
 test("renders the complete learning loop and safety boundary", async () => {
   const html = await (await render()).text();
 
-  for (const label of ["课程", "证据规则", "病例库", "测验", "报告实验室"]) {
+  for (const label of ["课程", "证据规则", "SOP工作流", "病例库", "测验", "报告实验室"]) {
     assert.match(html, new RegExp(`>${label}<`));
   }
 
@@ -48,6 +48,20 @@ test("renders the complete learning loop and safety boundary", async () => {
   assert.match(html, /28<small> 条标准全覆盖/);
   assert.match(html, /变异致病性 ≠ 病例诊断/);
   assert.match(html, /不接收真实患者信息，不替代临床诊断/);
+});
+
+test("includes the SOP-derived auditable workflow without internal document-control details", async () => {
+  const source = await readFile(new URL("../app/sop-workflow.ts", import.meta.url), "utf8");
+  const workspace = await readFile(new URL("../app/learning-workspace.tsx", import.meta.url), "utf8");
+
+  assert.equal((source.match(/id: "/g) ?? []).length, 10);
+  for (const label of ["解读底稿十步法", "规范优先级", "阈值登记表", "单变异证据记录字段", "CNV loss", "CNV gain"]) {
+    assert.match(workspace, new RegExp(label));
+  }
+  assert.match(workspace, /不展示企业文控信息、内部职责或原文阈值/);
+  assert.match(workspace, /sopChecked/);
+  assert.match(workspace, /sopBranch/);
+  assert.doesNotMatch(workspace, /SOP-RI-047|华大BGI/);
 });
 
 test("keeps independent report drafts and submitted case scores", async () => {

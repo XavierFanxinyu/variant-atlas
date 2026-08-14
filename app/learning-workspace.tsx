@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { boundaryCases, errorPatterns, evidenceDrills, examBanks, lessonAddons, reportTemplates, supplementalLessons, type BoundaryCaseDefinition, type Lesson } from "./learning-content";
+import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry } from "./sop-workflow";
 
-type View = "dashboard" | "case" | "rules" | "roadmap" | "courses" | "library" | "exam" | "report" | "mistakes";
+type View = "dashboard" | "case" | "rules" | "sop" | "roadmap" | "courses" | "library" | "exam" | "report" | "mistakes";
 type CaseAnswer = { inheritance: string; evidence: string[]; classification: string; report: string };
 type PahAnswer = {
   inheritance: string;
@@ -206,6 +207,8 @@ export default function LearningWorkspace() {
   const [reportSubmitted, setReportSubmitted] = useState(false);
   const [reportBestScore, setReportBestScore] = useState(0);
   const [additionalCaseScores, setAdditionalCaseScores] = useState<Record<string, number>>({});
+  const [sopChecked, setSopChecked] = useState<string[]>([]);
+  const [sopBranch, setSopBranch] = useState<"sequence" | "cnv-loss" | "cnv-gain">("sequence");
 
   useEffect(() => {
     const saved = window.localStorage.getItem("variant-atlas-demo");
@@ -230,14 +233,16 @@ export default function LearningWorkspace() {
         setReportDrafts(state.reportDrafts ?? (state.reportDraft ? { [savedTemplateId]: state.reportDraft } : {}));
         setReportBestScore(state.reportBestScore ?? 0);
         setAdditionalCaseScores(state.additionalCaseScores ?? {});
+        setSopChecked(Array.isArray(state.sopChecked) ? Array.from(new Set(state.sopChecked.filter((id: unknown) => typeof id === "string" && sopWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
+        setSopBranch(["sequence","cnv-loss","cnv-gain"].includes(state.sopBranch) ? state.sopBranch : "sequence");
         /* eslint-enable react-hooks/set-state-in-effect */
       } catch { /* ignore a damaged local draft */ }
     }
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDrafts, reportTemplateId, reportBestScore, additionalCaseScores }));
-  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDrafts, reportTemplateId, reportBestScore, additionalCaseScores]);
+    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDrafts, reportTemplateId, reportBestScore, additionalCaseScores, sopChecked, sopBranch }));
+  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDrafts, reportTemplateId, reportBestScore, additionalCaseScores, sopChecked, sopBranch]);
 
   const noonanReportGrade = useMemo(() => gradeReport(reportTemplates[0], answer.report), [answer.report]);
   const pahReportGrade = useMemo(() => gradeReport(reportTemplates[1], pahAnswer.report), [pahAnswer.report]);
@@ -283,6 +288,7 @@ export default function LearningWorkspace() {
   const reportDraft = reportDrafts[reportTemplateId] ?? "";
   const reportGrade = useMemo(() => gradeReport(activeReportTemplate, reportDraft), [activeReportTemplate, reportDraft]);
   const coursePercent = Math.round((lessonDone.length / lessons.length) * 100);
+  const sopPercent = Math.round((sopChecked.length / sopWorkflowSteps.length) * 100);
   const scoredCases = ["001","002","003","004","005","006","007","008"].map(id => additionalCaseScores[id] ?? 0);
   const noonanCanAdvance = step < 2 || (step === 2 && Boolean(answer.inheritance)) || step === 3 || (step === 4 && answer.evidence.length > 0) || (step === 5 && Boolean(answer.classification));
   const pahCanAdvance = pahStep < 2 || (pahStep === 2 && Boolean(pahAnswer.inheritance)) || (pahStep === 3 && Boolean(pahAnswer.phase)) || (pahStep === 4 && Boolean(pahAnswer.variant1Class) && Boolean(pahAnswer.variant2Class) && pahAnswer.rationale1.length >= 50 && pahAnswer.rationale2.length >= 50) || (pahStep === 5 && Boolean(pahAnswer.conclusion));
@@ -353,6 +359,7 @@ export default function LearningWorkspace() {
           <button className={view === "dashboard" ? "active" : ""} onClick={() => navigate("dashboard")}>学习台</button>
           <button className={view === "courses" ? "active" : ""} onClick={() => navigate("courses")}>课程</button>
           <button className={view === "rules" ? "active" : ""} onClick={() => navigate("rules")}>证据规则</button>
+          <button className={view === "sop" ? "active" : ""} onClick={() => navigate("sop")}>SOP工作流</button>
           <button className={view === "library" || view === "case" ? "active" : ""} onClick={() => navigate("library")}>病例库</button>
           <button className={view === "exam" ? "active" : ""} onClick={() => navigate("exam")}>测验</button>
           <button className={view === "report" ? "active" : ""} onClick={() => navigate("report")}>报告实验室</button>
@@ -408,6 +415,7 @@ export default function LearningWorkspace() {
               <button onClick={() => navigate("exam")}><span>ASSESSMENT</span><b>完成三级阶段测验</b><small>每级8题即时反馈，错误自动进入错题本</small></button>
               <button onClick={() => navigate("mistakes")}><span>REVIEW</span><b>查看错题本</b><small>{mistakes.length ? `${mistakes.length} 个待巩固主题` : "暂无错题，先完成阶段测验"}</small></button>
               <button onClick={() => navigate("report")}><span>REPORT LAB</span><b>完成报告六维评分</b><small>阳性、复合杂合与VUS边界三类模板</small></button>
+              <button onClick={() => navigate("sop")}><span>SOP WORKFLOW</span><b>完成10步解读底稿</b><small>规范路由、证据依赖、CNV分支与复核关口</small></button>
             </section>
 
             <section className="principle-strip">
@@ -473,7 +481,7 @@ export default function LearningWorkspace() {
         {view === "rules" && (
           <section className="evidence-page">
             <div className="evidence-hero"><div><span className="eyebrow">EVIDENCE HANDBOOK · 28 CRITERIA</span><h1>证据规则工作手册</h1><p>左侧保留2015年ACMG/AMP原始框架，右侧标注ClinGen现行通用细化。真正解读时，适用的基因/疾病VCEP规范优先于这里的通用提示。</p></div><div className="evidence-counts"><span><b>16</b>致病证据</span><span><b>12</b>良性证据</span><span><b>11</b>ClinGen通用细化主题</span></div></div>
-            <div className="evidence-alert"><b>使用顺序</b><p>确认基因—疾病—遗传模式 → 查找VCEP特异规范 → 应用ClinGen通用建议 → 回到ACMG/AMP组合规则 → 记录版本、来源与反证。</p></div>
+            <div className="evidence-alert"><b>使用顺序</b><p>确认基因—疾病—遗传模式 → 查找VCEP特异规范 → 应用ClinGen通用建议 → 回到ACMG/AMP组合规则 → 记录版本、来源与反证。</p><button onClick={() => navigate("sop")}>打开完整SOP工作流 →</button></div>
             <div className="rule-toolbar">
               <label><span>检索</span><input value={ruleSearch} onChange={(event) => setRuleSearch(event.target.value)} placeholder="代码、名称或关键词" /></label>
               <div><span>方向</span>{["全部","致病","良性"].map(item => <button className={ruleDirection === item ? "active" : ""} onClick={() => setRuleDirection(item)} key={item}>{item}</button>)}</div>
@@ -496,6 +504,46 @@ export default function LearningWorkspace() {
             <section className="evidence-drills"><div className="drill-index"><span className="eyebrow">EVIDENCE ASSIGNMENT · {drillCorrectCount}/{evidenceDrills.length}</span><h2>证据赋分专项</h2><p>不仅选代码，还必须写至少20字理由。完成后才揭示答案与高风险误区。</p>{evidenceDrills.map((drill,index) => <button className={`${drillIndex === index ? "active" : ""} ${drillCompleted.includes(drill.id) ? "done" : ""}`} onClick={() => setDrillIndex(index)} key={drill.id}><span>{drillCompleted.includes(drill.id) ? "✓" : index+1}</span>{drill.title}</button>)}</div><article className="drill-workspace"><span>SCENARIO {drillIndex+1}</span><h2>{activeDrill.title}</h2><p className="drill-stem">{activeDrill.stem}</p><div className="drill-options">{activeDrill.options.map(option => <button className={drillAnswers[activeDrill.id] === option ? "selected" : ""} onClick={() => setDrillAnswers({...drillAnswers,[activeDrill.id]:option})} key={option}>{option}</button>)}</div><label><span>证据理由</span><textarea value={drillRationales[activeDrill.id] ?? ""} onChange={event => setDrillRationales({...drillRationales,[activeDrill.id]:event.target.value})} placeholder="说明适用条件、强度、数据质量与可能反证（至少20字）……"/></label><button className="primary" disabled={!drillAnswers[activeDrill.id] || (drillRationales[activeDrill.id] ?? "").length < 20} onClick={completeDrill}>提交并揭示</button>{drillCompleted.includes(activeDrill.id) && <Feedback ok={activeDrill.expected.includes(drillAnswers[activeDrill.id])}>{activeDrill.explanation}<br/>高风险误区：{activeDrill.risk}</Feedback>}</article></section>
             <section className="revision-map"><h2>ClinGen通用修订地图</h2><div><article><b>人群</b><p>BA1例外列表；PM2降为支持；gnomAD v4使用指导。</p></article><article><b>机制与剪接</b><p>PVS1决策树；PVS1/PS1/PP3/BP4/BP7剪接框架。</p></article><article><b>病例与家系</b><p>PS2/PM6计点；PM3反式计点；PP1/BS4与PP4。</p></article><article><b>功能与计算</b><p>PS3/BS3实验质量；PP3/BP4工具校准。</p></article><article><b>来源型证据</b><p>PP5/BP6不建议使用，应回溯底层证据。</p></article><article><b>分类框架</b><p>强度改名规范；贝叶斯模型；自然尺度计分系统。</p></article></div></section>
             <div className="sources-panel"><h2>主版本与原始来源</h2><ul><li><a href="https://www.acmg.net/docs/standards_guidelines_for_the_interpretation_of_sequence_variants.pdf" target="_blank" rel="noreferrer">ACMG/AMP序列变异解读指南（2015，原始28条标准及组合表）</a></li><li><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">ClinGen Variant Classification Guidance（页面标注最后更新：2025-07）</a></li><li><a href="https://www.clinicalgenome.org/curation-activities/variant-pathogenicity/documents/" target="_blank" rel="noreferrer">ClinGen变异致病性文件与VCEP规范</a></li><li><a href="https://varnomen.hgvs.org/" target="_blank" rel="noreferrer">HGVS Nomenclature Recommendations</a></li></ul><p>本页是教学用工作手册，不替代实验室SOP或基因/疾病特异规范。动态资源须在每次真实解读时重新核查。</p></div>
+          </section>
+        )}
+
+        {view === "sop" && (
+          <section className="sop-page">
+            <div className="sop-hero">
+              <div><span className="eyebrow">SOP-ALIGNED WORKFLOW · GENERALIZED</span><h1>临床变异解读<br />可审计工作流</h1><p>把用户提供的临床变异解读SOP提炼为通用训练路径：每一步都明确输入、判断、记录产物和停止条件。这里不展示企业文控信息、内部职责或原文阈值。</p></div>
+              <aside><span>底稿完成度</span><strong>{sopPercent}<small>%</small></strong><div className="mini-progress"><i style={{width:`${sopPercent}%`}}/></div><p>{sopChecked.length} / {sopWorkflowSteps.length} 个关口已自检</p><button disabled={!sopChecked.length} onClick={() => setSopChecked([])}>重置本次自检</button></aside>
+            </div>
+
+            <div className="sop-boundary"><b>适用边界</b><p>真实工作时的优先级是：现行疾病/基因特异规范 ＞ ClinGen通用建议 ＞ ACMG/AMP基础框架 ＞ 经批准的实验室本地默认。任何阈值都必须记录版本和适用范围；本页不能替代你所在实验室的受控SOP。</p></div>
+
+            <section className="sop-section">
+              <div className="section-heading"><div><span>RULE ROUTING</span><h2>规范优先级</h2></div><p>先选规则，再评证据。这样可以防止把一个机构的经验阈值误当成所有基因和疾病都适用的通用标准。</p></div>
+              <div className="hierarchy-grid">{hierarchyTiers.map(([no,title,body]) => <article key={no}><span>{no}</span><div><h3>{title}</h3><p>{body}</p></div></article>)}</div>
+            </section>
+
+            <section className="sop-section workflow-section">
+              <div className="section-heading"><div><span>10 QUALITY GATES</span><h2>解读底稿十步法</h2></div><p>勾选表示你已经在当前练习中留下了可复核记录，而不只是“想过这个问题”。状态仅保存在本机。</p></div>
+              <div className="sop-workflow">{sopWorkflowSteps.map((item,index) => { const done=sopChecked.includes(item.id); return <article className={done ? "done" : ""} key={item.id}><button aria-pressed={done} onClick={() => setSopChecked(done ? sopChecked.filter(id => id !== item.id) : [...sopChecked,item.id])}><span>{done ? "✓" : String(index+1).padStart(2,"0")}</span><b>{done ? "已留底稿" : "标记已完成"}</b></button><div><h3>{item.title}</h3><p>{item.decision}</p><dl><div><dt>必须记录</dt><dd>{item.record}</dd></div><div><dt>停止条件</dt><dd>{item.stop}</dd></div></dl></div></article>})}</div>
+            </section>
+
+            <section className="sop-section branch-section">
+              <div className="section-heading"><div><span>VARIANT-TYPE ROUTING</span><h2>进入正确的证据分支</h2></div><p>序列变异与CNV不能共用一套评分。先选本次训练对象，再查看对应的复核结构。</p></div>
+              <div className="branch-tabs"><button className={sopBranch === "sequence" ? "active" : ""} onClick={() => setSopBranch("sequence")}>SNV / indel / 剪接</button><button className={sopBranch === "cnv-loss" ? "active" : ""} onClick={() => setSopBranch("cnv-loss")}>CNV loss</button><button className={sopBranch === "cnv-gain" ? "active" : ""} onClick={() => setSopBranch("cnv-gain")}>CNV gain</button></div>
+              {sopBranch === "sequence" ? <div className="sequence-audit">{sequenceAuditCards.map(([title,body]) => <article key={title}><b>{title}</b><p>{body}</p></article>)}</div> : <div className="cnv-panel"><div className="cnv-route"><span>{sopBranch === "cnv-loss" ? "LOSS · 重点核查HI" : "GAIN · 重点核查TS"}</span>{cnvWorkflow.map(([part,title,body]) => <article key={part}><b>{part}</b><div><h3>{title}</h3><p>{body}</p></div></article>)}</div><aside><span>五级分类分值</span>{cnvClassification.map(([range,label]) => <div key={range}><b>{range}</b><p>{label}</p></div>)}<small>使用ACMG/ClinGen宪法性CNV框架。基因内CNV还需评估断点、阅读框、转录本、PVS1及检测分辨率；嵌合结果需单独说明样本、比例与方法局限。</small></aside></div>}
+            </section>
+
+            <section className="sop-section threshold-section">
+              <div className="section-heading"><div><span>VERSIONED THRESHOLDS</span><h2>阈值登记表</h2></div><p>不要只留下“达到阈值”。可复核底稿必须说明阈值来自哪里、适用于什么对象、当时用了哪个数据版本。</p></div>
+              <div className="threshold-table"><div className="head"><span>证据域</span><span>相关代码</span><span>底稿至少记录</span></div>{thresholdRegistry.map(([domain,codes,record]) => <div key={domain}><b>{domain}</b><code>{codes}</code><p>{record}</p></div>)}</div>
+            </section>
+
+            <section className="sop-section record-section">
+              <div className="section-heading"><div><span>AUDITABLE RECORD</span><h2>单变异证据记录字段</h2></div><p>这些字段是报告之前的工作底稿，不是报告正文。建议在受控系统中逐项保留，并与最终结论一起冻结证据快照。</p></div>
+              <div className="record-grid">{evidenceRecordFields.map((field,index) => <article key={field}><span>{String(index+1).padStart(2,"0")}</span><b>{field}</b></article>)}</div>
+              <div className="privacy-note"><b>练习数据提醒</b><p>本站只保存浏览器本地学习状态。不要在页面中录入真实姓名、证件号、联系方式、原始病历或可回溯患者的内部编号。</p></div>
+            </section>
+
+            <section className="sop-sources"><h2>本次整合的规范骨架</h2><div><a href="https://clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">ClinGen Variant Classification Guidance ↗</a><a href="https://cspec.genome.network/cspec/ui/svi/" target="_blank" rel="noreferrer">ClinGen Criteria Specification Registry ↗</a><a href="https://clinicalgenome.org/working-groups/dosage-sensitivity-curation/" target="_blank" rel="noreferrer">ClinGen Dosage Sensitivity ↗</a></div><p>内容来自用户提供SOP的通用化结构提炼，并结合平台已采用的ACMG/AMP与ClinGen框架重新组织；未复制内部表格、文控记录或机构专属执行口径。</p></section>
           </section>
         )}
 
@@ -601,7 +649,7 @@ export default function LearningWorkspace() {
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.0 基础版</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.1 SOP增强版</span></footer>
     </div>
   );
 }
