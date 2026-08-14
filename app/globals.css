@@ -133,6 +133,11 @@ button:disabled { opacity: .38; cursor: not-allowed; }
 .rule-list button i { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: #dcded7; color: var(--muted); font-size: 9px; font-style: normal; }
 .rule-list button.active i { background: var(--lime); color: var(--ink); }
 .rule-detail { padding: clamp(30px, 4vw, 60px); }
+.rule-empty { align-self: start; }
+.rule-empty > span { color: var(--orange); font-size: 10px; font-weight: 800; letter-spacing: .12em; }
+.rule-empty > h1 { display: block; margin-bottom: 16px; }
+.rule-empty > p { max-width: 560px; color: var(--muted); line-height: 1.8; }
+.rule-empty > button { margin-top: 22px; }
 .detail-top { display: flex; justify-content: space-between; align-items: center; }
 .detail-top > div { display: flex; gap: 7px; }
 .detail-top span { padding: 6px 9px; border-radius: 20px; background: #e8e9e3; color: var(--muted); font-size: 10px; }
@@ -527,6 +532,7 @@ footer span:last-child { text-align: right; }
   .rule-handbook { grid-template-columns: 1fr; }
   .rule-list { max-height: 420px; border-right: 0; border-bottom: 1px solid var(--line); }
   .detail-source { grid-template-columns: 1fr; }
+  .report-lab-actions { align-items: flex-start; flex-direction: column; gap: 10px; }
   .revision-map > div { grid-template-columns: 1fr; }
   .combination-panel article { grid-template-columns: 1fr; }
   .workbench-codes { grid-template-columns: repeat(2,1fr); }

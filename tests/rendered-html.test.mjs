@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 async function render() {
@@ -47,4 +48,14 @@ test("renders the complete learning loop and safety boundary", async () => {
   assert.match(html, /28<small> 条标准全覆盖/);
   assert.match(html, /变异致病性 ≠ 病例诊断/);
   assert.match(html, /不接收真实患者信息，不替代临床诊断/);
+});
+
+test("keeps independent report drafts and submitted case scores", async () => {
+  const source = await readFile(new URL("../app/learning-workspace.tsx", import.meta.url), "utf8");
+
+  assert.match(source, /const \[reportDrafts, setReportDrafts\]/);
+  assert.doesNotMatch(source, /setReportDraft\(/);
+  assert.match(source, /saveCaseScore\("001",score\)/);
+  assert.match(source, /saveCaseScore\("002",pahScore\)/);
+  assert.equal(source.match(/JSON\.stringify\(\{answer,step\}\)/g)?.length, 3);
 });
