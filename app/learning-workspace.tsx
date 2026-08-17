@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { boundaryCases, errorPatterns, evidenceDrills, examBanks, lessonAddons, reportTemplates, supplementalLessons, type BoundaryCaseDefinition, type Lesson } from "./learning-content";
-import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry } from "./sop-workflow";
+import ReportLab from "./report-lab";
+import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry, wesCaseWorkflowSteps } from "./sop-workflow";
 
 type View = "dashboard" | "case" | "rules" | "sop" | "roadmap" | "courses" | "library" | "exam" | "report" | "mistakes";
 type CaseAnswer = { inheritance: string; evidence: string[]; classification: string; report: string };
@@ -202,12 +203,10 @@ export default function LearningWorkspace() {
   const [drillAnswers, setDrillAnswers] = useState<Record<string, string>>({});
   const [drillRationales, setDrillRationales] = useState<Record<string, string>>({});
   const [drillCompleted, setDrillCompleted] = useState<string[]>([]);
-  const [reportTemplateId, setReportTemplateId] = useState("ad");
-  const [reportDrafts, setReportDrafts] = useState<Record<string, string>>({});
-  const [reportSubmitted, setReportSubmitted] = useState(false);
   const [reportBestScore, setReportBestScore] = useState(0);
   const [additionalCaseScores, setAdditionalCaseScores] = useState<Record<string, number>>({});
   const [sopChecked, setSopChecked] = useState<string[]>([]);
+  const [wesChecked, setWesChecked] = useState<string[]>([]);
   const [sopBranch, setSopBranch] = useState<"sequence" | "cnv-loss" | "cnv-gain">("sequence");
 
   useEffect(() => {
@@ -228,12 +227,10 @@ export default function LearningWorkspace() {
         setDrillAnswers(state.drillAnswers ?? {});
         setDrillRationales(state.drillRationales ?? {});
         setDrillCompleted(state.drillCompleted ?? []);
-        const savedTemplateId = state.reportTemplateId ?? "ad";
-        setReportTemplateId(savedTemplateId);
-        setReportDrafts(state.reportDrafts ?? (state.reportDraft ? { [savedTemplateId]: state.reportDraft } : {}));
         setReportBestScore(state.reportBestScore ?? 0);
         setAdditionalCaseScores(state.additionalCaseScores ?? {});
         setSopChecked(Array.isArray(state.sopChecked) ? Array.from(new Set(state.sopChecked.filter((id: unknown) => typeof id === "string" && sopWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
+        setWesChecked(Array.isArray(state.wesChecked) ? Array.from(new Set(state.wesChecked.filter((id: unknown) => typeof id === "string" && wesCaseWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
         setSopBranch(["sequence","cnv-loss","cnv-gain"].includes(state.sopBranch) ? state.sopBranch : "sequence");
         /* eslint-enable react-hooks/set-state-in-effect */
       } catch { /* ignore a damaged local draft */ }
@@ -241,8 +238,8 @@ export default function LearningWorkspace() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDrafts, reportTemplateId, reportBestScore, additionalCaseScores, sopChecked, sopBranch }));
-  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportDrafts, reportTemplateId, reportBestScore, additionalCaseScores, sopChecked, sopBranch]);
+    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, sopBranch }));
+  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, sopBranch]);
 
   const noonanReportGrade = useMemo(() => gradeReport(reportTemplates[0], answer.report), [answer.report]);
   const pahReportGrade = useMemo(() => gradeReport(reportTemplates[1], pahAnswer.report), [pahAnswer.report]);
@@ -284,11 +281,8 @@ export default function LearningWorkspace() {
   const workbenchResult = useMemo(() => classifyTraditional(workbench), [workbench]);
   const activeDrill = evidenceDrills[drillIndex];
   const drillCorrectCount = evidenceDrills.filter((drill) => drillCompleted.includes(drill.id) && drill.expected.includes(drillAnswers[drill.id])).length;
-  const activeReportTemplate = reportTemplates.find((template) => template.id === reportTemplateId) ?? reportTemplates[0];
-  const reportDraft = reportDrafts[reportTemplateId] ?? "";
-  const reportGrade = useMemo(() => gradeReport(activeReportTemplate, reportDraft), [activeReportTemplate, reportDraft]);
   const coursePercent = Math.round((lessonDone.length / lessons.length) * 100);
-  const sopPercent = Math.round((sopChecked.length / sopWorkflowSteps.length) * 100);
+  const sopPercent = Math.round(((sopChecked.length + wesChecked.length) / (sopWorkflowSteps.length + wesCaseWorkflowSteps.length)) * 100);
   const scoredCases = ["001","002","003","004","005","006","007","008"].map(id => additionalCaseScores[id] ?? 0);
   const noonanCanAdvance = step < 2 || (step === 2 && Boolean(answer.inheritance)) || step === 3 || (step === 4 && answer.evidence.length > 0) || (step === 5 && Boolean(answer.classification));
   const pahCanAdvance = pahStep < 2 || (pahStep === 2 && Boolean(pahAnswer.inheritance)) || (pahStep === 3 && Boolean(pahAnswer.phase)) || (pahStep === 4 && Boolean(pahAnswer.variant1Class) && Boolean(pahAnswer.variant2Class) && pahAnswer.rationale1.length >= 50 && pahAnswer.rationale2.length >= 50) || (pahStep === 5 && Boolean(pahAnswer.conclusion));
@@ -414,8 +408,8 @@ export default function LearningWorkspace() {
               <button onClick={() => navigate("library")}><span>CASE MATRIX</span><b>查看8例覆盖矩阵</b><small>八例均可逐步作答、评分并保存进度</small></button>
               <button onClick={() => navigate("exam")}><span>ASSESSMENT</span><b>完成三级阶段测验</b><small>每级8题即时反馈，错误自动进入错题本</small></button>
               <button onClick={() => navigate("mistakes")}><span>REVIEW</span><b>查看错题本</b><small>{mistakes.length ? `${mistakes.length} 个待巩固主题` : "暂无错题，先完成阶段测验"}</small></button>
-              <button onClick={() => navigate("report")}><span>REPORT LAB</span><b>完成报告六维评分</b><small>阳性、复合杂合与VUS边界三类模板</small></button>
-              <button onClick={() => navigate("sop")}><span>SOP WORKFLOW</span><b>完成10步解读底稿</b><small>规范路由、证据依赖、CNV分支与复核关口</small></button>
+              <button onClick={() => navigate("report")}><span>REPORT LAB</span><b>完成结构化报告审计</b><small>单人/家系双路径 · 10个责任区 · 13类情境</small></button>
+              <button onClick={() => navigate("sop")}><span>SOP WORKFLOW</span><b>完成WES双层底稿</b><small>12步病例流程 + 10步单变异证据审计</small></button>
             </section>
 
             <section className="principle-strip">
@@ -462,13 +456,7 @@ export default function LearningWorkspace() {
           </section>
         )}
 
-        {view === "report" && (
-          <section className="page-section report-lab-page">
-            <div className="page-intro"><span className="eyebrow">REPORT WRITING LAB</span><h1>报告六维评分实验室</h1><p>这是规则化形成性评分：检查必要信息是否出现，不评价医学事实真伪，也不替代专业复核。</p></div>
-            <div className="report-template-tabs">{reportTemplates.map(template => <button className={reportTemplateId === template.id ? "active" : ""} onClick={() => {setReportTemplateId(template.id);setReportSubmitted(false)}} key={template.id}><b>{template.title}</b><span>{template.case}</span></button>)}</div>
-            <div className="report-lab-grid"><article><div className="report-brief"><span>写作任务</span><h2>{activeReportTemplate.title}</h2><p>{activeReportTemplate.case}</p><ul>{activeReportTemplate.required.map(item => <li key={item}>{item}</li>)}</ul></div><textarea value={reportDraft} onChange={event => {setReportDrafts({...reportDrafts,[reportTemplateId]:event.target.value});setReportSubmitted(false)}} placeholder="建议按检测发现 → 规范描述与来源 → 分别分类及依据 → 病例相关性 → 限定与建议的顺序撰写……"/><div className="report-lab-actions"><span>{reportDraft.length} 字符 · 已自动保存 · 历史最高 {reportBestScore}</span><button className="primary" disabled={reportDraft.length < 80} onClick={() => {setReportSubmitted(true);setReportBestScore(Math.max(reportBestScore,reportGrade.total))}}>提交六维评分</button></div></article><aside className="rubric-panel"><span>评分维度</span>{reportGrade.dimensions.map(item => <div className={item.met ? "met" : ""} key={item.label}><b>{item.met ? "✓" : "○"}</b><p><strong>{item.label}</strong><small>{item.hint}</small></p><i>{item.score}</i></div>)}<div className="rubric-total"><span>当前得分</span><b>{reportSubmitted ? reportGrade.total : "—"}</b><small>/100</small></div>{reportSubmitted && <p className="rubric-note">{reportGrade.total >= 80 ? "结构达到站内训练通过线。仍需核查证据真实性、疾病实体和措辞边界。" : "请优先补足未命中的维度，再重新提交。"}</p>}</aside></div>
-          </section>
-        )}
+        {view === "report" && <ReportLab bestScore={reportBestScore} onScore={(value) => setReportBestScore((current) => Math.max(current, value))} />}
 
         {view === "mistakes" && (
           <section className="page-section">
@@ -511,7 +499,7 @@ export default function LearningWorkspace() {
           <section className="sop-page">
             <div className="sop-hero">
               <div><span className="eyebrow">SOP-ALIGNED WORKFLOW · GENERALIZED</span><h1>临床变异解读<br />可审计工作流</h1><p>把用户提供的临床变异解读SOP提炼为通用训练路径：每一步都明确输入、判断、记录产物和停止条件。这里不展示企业文控信息、内部职责或原文阈值。</p></div>
-              <aside><span>底稿完成度</span><strong>{sopPercent}<small>%</small></strong><div className="mini-progress"><i style={{width:`${sopPercent}%`}}/></div><p>{sopChecked.length} / {sopWorkflowSteps.length} 个关口已自检</p><button disabled={!sopChecked.length} onClick={() => setSopChecked([])}>重置本次自检</button></aside>
+              <aside><span>双层底稿完成度</span><strong>{sopPercent}<small>%</small></strong><div className="mini-progress"><i style={{width:`${sopPercent}%`}}/></div><p>{sopChecked.length + wesChecked.length} / {sopWorkflowSteps.length + wesCaseWorkflowSteps.length} 个关口已自检</p><button disabled={!sopChecked.length && !wesChecked.length} onClick={() => {setSopChecked([]);setWesChecked([])}}>重置本次自检</button></aside>
             </div>
 
             <div className="sop-boundary"><b>适用边界</b><p>真实工作时的优先级是：现行疾病/基因特异规范 ＞ ClinGen通用建议 ＞ ACMG/AMP基础框架 ＞ 经批准的实验室本地默认。任何阈值都必须记录版本和适用范围；本页不能替代你所在实验室的受控SOP。</p></div>
@@ -521,8 +509,13 @@ export default function LearningWorkspace() {
               <div className="hierarchy-grid">{hierarchyTiers.map(([no,title,body]) => <article key={no}><span>{no}</span><div><h3>{title}</h3><p>{body}</p></div></article>)}</div>
             </section>
 
+            <section className="sop-section workflow-section wes-workflow-section">
+              <div className="section-heading"><div><span>12 CASE GATES</span><h2>WES病例全流程十二步</h2></div><p>这一层回答“一个病例怎样从样本进入报告”，覆盖单人/三联体路由、质量停止关口、多变异通道、未解决升级、验证和双重复核。</p></div>
+              <div className="sop-workflow wes-case-workflow">{wesCaseWorkflowSteps.map((item,index) => { const done=wesChecked.includes(item.id); return <article className={done ? "done" : ""} key={item.id}><button aria-pressed={done} onClick={() => setWesChecked(done ? wesChecked.filter(id => id !== item.id) : [...wesChecked,item.id])}><span>{done ? "✓" : String(index+1).padStart(2,"0")}</span><b>{done ? "已留病例底稿" : "标记已完成"}</b></button><div><h3>{item.title}</h3><p>{item.decision}</p><dl><div><dt>必须记录</dt><dd>{item.record}</dd></div><div><dt>停止条件</dt><dd>{item.stop}</dd></div></dl></div></article>})}</div>
+            </section>
+
             <section className="sop-section workflow-section">
-              <div className="section-heading"><div><span>10 QUALITY GATES</span><h2>解读底稿十步法</h2></div><p>勾选表示你已经在当前练习中留下了可复核记录，而不只是“想过这个问题”。状态仅保存在本机。</p></div>
+              <div className="section-heading"><div><span>10 VARIANT GATES</span><h2>单变异证据底稿十步法</h2></div><p>这一层回答“一个候选变异怎样被规范分类并进入病例结论”。勾选表示已留下可复核记录，状态仅保存在本机。</p></div>
               <div className="sop-workflow">{sopWorkflowSteps.map((item,index) => { const done=sopChecked.includes(item.id); return <article className={done ? "done" : ""} key={item.id}><button aria-pressed={done} onClick={() => setSopChecked(done ? sopChecked.filter(id => id !== item.id) : [...sopChecked,item.id])}><span>{done ? "✓" : String(index+1).padStart(2,"0")}</span><b>{done ? "已留底稿" : "标记已完成"}</b></button><div><h3>{item.title}</h3><p>{item.decision}</p><dl><div><dt>必须记录</dt><dd>{item.record}</dd></div><div><dt>停止条件</dt><dd>{item.stop}</dd></div></dl></div></article>})}</div>
             </section>
 

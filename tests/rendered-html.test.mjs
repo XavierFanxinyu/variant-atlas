@@ -54,21 +54,32 @@ test("includes the SOP-derived auditable workflow without internal document-cont
   const source = await readFile(new URL("../app/sop-workflow.ts", import.meta.url), "utf8");
   const workspace = await readFile(new URL("../app/learning-workspace.tsx", import.meta.url), "utf8");
 
-  assert.equal((source.match(/id: "/g) ?? []).length, 10);
-  for (const label of ["解读底稿十步法", "规范优先级", "阈值登记表", "单变异证据记录字段", "CNV loss", "CNV gain"]) {
+  assert.equal((source.match(/id: "/g) ?? []).length, 22);
+  assert.equal((source.match(/id: "wes-/g) ?? []).length, 12);
+  for (const label of ["WES病例全流程十二步", "单变异证据底稿十步法", "规范优先级", "阈值登记表", "单变异证据记录字段", "CNV loss", "CNV gain"]) {
     assert.match(workspace, new RegExp(label));
   }
   assert.match(workspace, /不展示企业文控信息、内部职责或原文阈值/);
   assert.match(workspace, /sopChecked/);
+  assert.match(workspace, /wesChecked/);
   assert.match(workspace, /sopBranch/);
   assert.doesNotMatch(workspace, /SOP-RI-047|华大BGI/);
 });
 
-test("keeps independent report drafts and submitted case scores", async () => {
+test("provides structured singleton and family report training", async () => {
   const source = await readFile(new URL("../app/learning-workspace.tsx", import.meta.url), "utf8");
+  const reportLab = await readFile(new URL("../app/report-lab.tsx", import.meta.url), "utf8");
+  const reportData = await readFile(new URL("../app/report-lab-data.ts", import.meta.url), "utf8");
 
-  assert.match(source, /const \[reportDrafts, setReportDrafts\]/);
-  assert.doesNotMatch(source, /setReportDraft\(/);
+  assert.match(source, /<ReportLab bestScore=/);
+  assert.match(reportLab, /variant-atlas-report-lab-v2/);
+  for (const label of ["章节完整性", "病例逻辑一致性", "临床安全边界", "可追溯性", "后续行动"]) {
+    assert.match(reportLab, new RegExp(label));
+  }
+  assert.equal((reportData.match(/id: "(?:family|single)-/g) ?? []).length, 13);
+  assert.equal((reportData.match(/no: "\d{2}"/g) ?? []).length, 10);
+  assert.match(reportData, /mode: "family"/);
+  assert.match(reportData, /mode: "singleton"/);
   assert.match(source, /saveCaseScore\("001",score\)/);
   assert.match(source, /saveCaseScore\("002",pahScore\)/);
   assert.equal(source.match(/JSON\.stringify\(\{answer,step\}\)/g)?.length, 3);
