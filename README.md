@@ -1,100 +1,72 @@
-# vinext-starter
+# Variant Atlas｜遗传解读训练
 
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
+面向 WES/WGS 单基因病诊断的中文遗传变异解读学习平台。从分子遗传学基础、质量控制和 HGVS 规范开始，逐步训练 ACMG/AMP 证据赋分、病例级整合、报告写作和高风险边界判断。
 
-## Prerequisites
+在线学习：[variant-atlas-genetics.jevettewquapbd.chatgpt.site](https://variant-atlas-genetics.jevettewquapbd.chatgpt.site)
 
-- Node.js `>=22.13.0`
+## 主要功能
 
-## Quick Start
+- 24 节核心课程，覆盖表型、遗传模式、质量控制、转录本、证据评估和报告重分析
+- ACMG/AMP 28 条证据规则工作手册及 ClinGen 通用细化提示
+- 证据组合练习、专项赋分练习和三级阶段测验
+- 8 个逐步揭示的病例训练，覆盖显性、隐性、剪接、嵌合、CNV 和阴性升级
+- 阳性、复合杂合和 VUS 边界报告写作评分
+- SOP 化的 10 步可审计解读工作流、阈值登记和 CNV loss/gain 分支
+- 学习进度保存在访问者自己的浏览器中，不需要账户
+
+## 内容原则
+
+平台以 ACMG/AMP 框架和 ClinGen/SVI/VCEP 建议为核心。病例中的公开证据、指南附例和教学重组信息会分别标注，不把教学重组患者当作新的病例证据。
+
+SOP 相关内容经过通用化重组，不包含企业文控信息、内部职责、原始表格、机构专属阈值或患者资料。真实工作中应依次核查：
+
+1. 当前有效的疾病/基因特异规范；
+2. ClinGen 通用建议；
+3. ACMG/AMP 基础框架；
+4. 所在实验室经批准的现行 SOP。
+
+## 医学与隐私边界
+
+- 本项目仅用于学习，不替代临床诊断、实验室复核或职业资质认证。
+- 不要在网站、Issue、Discussion 或代码提交中录入真实患者信息。
+- VUS 不应单独用于确诊、无症状亲属预测或不可逆临床决策。
+- 数据库、指南和专家规范会更新，真实解读必须重新核查当前版本。
+
+## 本地运行
+
+要求 Node.js `>=22.13.0`。
 
 ```bash
-npm install
+npm ci
 npm run dev
+```
+
+生产构建与回归测试：
+
+```bash
 npm run build
+node --test tests/rendered-html.test.mjs
 ```
 
-This starter does not use `wrangler.jsonc`.
+## 技术结构
 
-## Included Shape
+- React 19
+- Vinext / Vite
+- Cloudflare Worker 兼容构建
+- 浏览器 `localStorage` 保存个人学习进度
+- 不依赖用户账户、患者数据库或服务端学习档案
 
-- edit site code under `app/`
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
+## 目录
 
-## Workspace Auth Headers
-
-Signed-in visitors receive both `oai-authenticated-user-id` and `oai-authenticated-user-email`. Private Sites require every visitor to sign in; public Sites may also have anonymous visitors, for whom neither header is present.
-
-The user ID is stable for the same user on the same Site and different across Sites. Email and name are intended for display or contact purposes.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const userId = requestHeaders.get("oai-authenticated-user-id");
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```text
+app/       页面、交互和学习内容
+public/    站点静态资源
+tests/     服务端渲染与关键功能回归测试
+worker/    Cloudflare Worker 入口
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+## 贡献与授权
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+欢迎通过 Issue 提交错别字、失效链接、规则更新线索和教学体验问题，但请勿提交患者信息或未获授权的内部材料。
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- Use `chatGPTSignInPath(returnTo)` and `chatGPTSignOutPath(returnTo)` for
-  browser links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
-
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
-
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
-
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
-
-## Useful Commands
-
-- `npm run dev`: start local development
-- `npm run build`: verify the vinext build output
-- `npm test`: build the starter and verify its rendered loading skeleton
-- `npm run db:generate`: generate Drizzle migrations after schema changes
-
-## Learn More
-
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+当前仓库未附带开源许可证。公开可见不等于授权复制、再分发或用于商业/临床用途；如后续决定开放复用，可再单独选择代码和教学内容许可证。
