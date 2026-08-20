@@ -1,4 +1,5 @@
 export type ReportMode = "family" | "singleton";
+export type ReportPlatform = "WES" | "WGS";
 
 export const reportSectionIds = [
   "intake",
@@ -38,6 +39,7 @@ export type ReportExpectation = {
 export type ReportScenario = {
   id: string;
   mode: ReportMode;
+  platform?: ReportPlatform;
   category: string;
   title: string;
   brief: string;
@@ -412,5 +414,34 @@ export const reportScenarios: ReportScenario[] = [
     source: { label: "ACMG Secondary Findings", url: "https://search.clinicalgenome.org/kb/genes/acmgsf" },
   },
 ];
+
+export const wgsReportScenarios: ReportScenario[] = [
+  {
+    id: "wgs-family-cnv", platform: "WGS", mode: "family", category: "CNV · 家系", title: "亲本平衡易位与胎儿不平衡重排", brief: "胎儿WGS见末端缺失伴另一染色体末端重复，母亲携带相关平衡易位。", caseFile: ["产前三联体WGS", "胎儿缺失+重复", "母亲平衡易位", "断点需结构级确认"], expectedBoundary: "将缺失、重复和亲本易位整合为同一重排模型；分别评价区段，但不重复计算病例证据。", expectations: [{label:"事件重建",terms:["同一", "重排"],match:"all"},{label:"区段分类",terms:["缺失", "重复", "分别"],match:"all"},{label:"来源",terms:["母亲", "平衡易位"],match:"all"},{label:"验证",terms:["核型", "FISH", "断点"],match:"any"},{label:"咨询",terms:["复发风险", "遗传咨询"],match:"all"}], safetyTerms:[{label:"不拆成三个病因",terms:["同一", "事件"],match:"all"}], source:{label:"ACMG germline SV points to consider",url:"https://pubmed.ncbi.nlm.nih.gov/36507974/"}
+  },
+  {
+    id: "wgs-family-upd", platform: "WGS", mode: "family", category: "ROH / UPD", title: "chr15长ROH与印记表型", brief: "三联体WGS发现chr15长拷贝中性纯合区域，临床提示印记疾病。", caseFile:["三联体WGS","chr15单染色体长ROH","无拷贝数改变","印记表型"], expectedBoundary:"ROH只提示UPD可能，必须用亲本来源及/或甲基化方法确认。", expectations:[{label:"观察事实",terms:["ROH", "拷贝中性"],match:"all"},{label:"机制假设",terms:["UPD", "印记"],match:"all"},{label:"确认",terms:["亲本来源", "甲基化"],match:"any"},{label:"分类边界",terms:["提示", "待确认"],match:"all"},{label:"隐性候选",terms:["隐性", "候选"],match:"all"}], safetyTerms:[{label:"不把ROH写成确诊",terms:["不能", "确诊"],match:"all"}], source:{label:"ACMG NGS technical standard",url:"https://pubmed.ncbi.nlm.nih.gov/33927380/"}
+  },
+  {
+    id: "wgs-family-str", platform: "WGS", mode: "family", category: "STR", title: "DMPK重复扩增超出精确计数", brief: "WGS与专门检测支持DM1相关扩增，但当前方法只能提供重复范围或下界。", caseFile:["家系WGS","DMPK CTG扩增","超出精确计数范围","表型与家系表现可变"], expectedBoundary:"按DM1专项标准报告可支持的范围，不编造精确重复数或确定个体预后。", expectations:[{label:"位点",terms:["DMPK", "CTG"],match:"all"},{label:"范围",terms:["范围", "下界"],match:"any"},{label:"规范",terms:["DM1", "专项"],match:"all"},{label:"预后边界",terms:["不能", "预后"],match:"all"},{label:"咨询",terms:["遗传咨询", "家系"],match:"all"}], safetyTerms:[{label:"不编造数值",terms:["不能", "精确"],match:"all"}], source:{label:"ACMG DM1 technical standard (2024)",url:"https://pubmed.ncbi.nlm.nih.gov/38836869/"}
+  },
+  {
+    id: "wgs-family-prenatal", platform: "WGS", mode: "family", category: "产前 · 倍性", title: "全基因组等位基因比例异常", brief: "产前三联体WGS出现提示三倍体的全基因组BAF模式，需要排除污染并正交确认。", caseFile:["产前样本","全基因组BAF异常","简化核型信号可能冲突","胎儿比例需核查"], expectedBoundary:"把倍性信号作为待确认发现，不从测序信号直接生成超出分辨率的确定核型。", expectations:[{label:"信号",terms:["BAF", "三倍体"],match:"all"},{label:"样本因素",terms:["污染", "胎儿比例"],match:"all"},{label:"确认",terms:["正交", "确认"],match:"all"},{label:"报告限定",terms:["待确认", "分辨率"],match:"all"},{label:"产前边界",terms:["孕周", "表型"],match:"any"}], safetyTerms:[{label:"不直接生成核型",terms:["不能", "核型"],match:"all"}], source:{label:"ACMG NGS technical standard",url:"https://pubmed.ncbi.nlm.nih.gov/33927380/"}
+  },
+  {
+    id: "wgs-single-sv", platform: "WGS", mode: "singleton", category: "SV · 断点", title: "平衡易位中断疾病基因", brief: "单人WGS提示平衡易位一侧断点位于已知LOF疾病基因内。", caseFile:["单人WGS","split-read和异常读对支持","无明显拷贝数变化","另一断点仍需评价"], expectedBoundary:"先确认完整事件与双方断点，再评价基因中断机制；结构真实不等于自动致病。", expectations:[{label:"事件",terms:["平衡易位", "双方断点"],match:"all"},{label:"真实性",terms:["读段", "确认"],match:"all"},{label:"机制",terms:["LOF", "转录本"],match:"all"},{label:"另一断点",terms:["另一断点"],match:"all"},{label:"分类边界",terms:["不等于", "致病"],match:"all"}], safetyTerms:[{label:"验证不等于致病",terms:["真实性", "致病性"],match:"all"}], source:{label:"ACMG germline SV points to consider",url:"https://pubmed.ncbi.nlm.nih.gov/36507974/"}
+  },
+  {
+    id: "wgs-single-mt", platform: "WGS", mode: "singleton", category: "mtDNA", title: "不同组织异质性不一致", brief: "血液低比例、尿沉渣较高比例检出同一mtDNA变异。", caseFile:["WGS mtDNA通道","血液8%","尿沉渣42%","母系信息有限"], expectedBoundary:"报告绑定组织、异质性、方法和检出限，不能用血液结果代表所有组织或预测严重度。", expectations:[{label:"表示",terms:["NC_012920", "m."],match:"all"},{label:"组织",terms:["血液", "尿沉渣"],match:"all"},{label:"异质性",terms:["8%", "42%"],match:"all"},{label:"方法",terms:["检出限", "方法"],match:"all"},{label:"严重度",terms:["不能", "严重度"],match:"all"}], safetyTerms:[{label:"组织依赖",terms:["组织", "不能"],match:"all"}], source:{label:"mtDNA ACMG/AMP specifications",url:"https://pubmed.ncbi.nlm.nih.gov/32906214/"}
+  },
+  {
+    id: "wgs-single-cnv", platform: "WGS", mode: "singleton", category: "CNV · VUS", title: "新生重复但无明确TS机制", brief: "单人WGS检出4 Mb重复；区域无明确TS基因，父母检测后提示新生。", caseFile:["WGS CNV","4 Mb gain","无明确TS证据","新生且表型部分吻合"], expectedBoundary:"使用gain独立框架；新生和大小不能替代剂量敏感机制，分类可能仍为VUS。", expectations:[{label:"gain框架",terms:["gain", "重复"],match:"all"},{label:"剂量",terms:["TS", "剂量敏感"],match:"any"},{label:"新生边界",terms:["新生", "不能替代"],match:"all"},{label:"分类",terms:["VUS", "意义未明"],match:"any"},{label:"病例相关性",terms:["部分", "表型"],match:"all"}], safetyTerms:[{label:"不套用HI",terms:["不能", "HI"],match:"all"}], source:{label:"ACMG/ClinGen constitutional CNV standard",url:"https://pubmed.ncbi.nlm.nih.gov/31690835/"}
+  },
+  {
+    id: "wgs-single-negative", platform: "WGS", mode: "singleton", category: "阴性 · 残余风险", title: "多通道WGS仍未解决", brief: "主要WGS通道质量合格且未发现可报告解释，但部分重复、甲基化和组织限制性机制未充分评价。", caseFile:["单人WGS","SNV/CNV/SV已分析","部分STR/甲基化未评价","新表型仍在出现"], expectedBoundary:"按通道描述本次未检出和未开展，保留技术与知识残余风险并给出针对性升级。", expectations:[{label:"准确阴性",terms:["未发现", "可报告", "解释"],match:"all"},{label:"通道状态",terms:["未开展", "未检出"],match:"all"},{label:"残余风险",terms:["不能排除", "遗传病"],match:"all"},{label:"升级",terms:["RNA", "甲基化", "长读长"],match:"any"},{label:"重分析",terms:["新表型", "重分析"],match:"all"}], safetyTerms:[{label:"不得写排除",terms:["不能排除", "阴性"],match:"all"}], source:{label:"ACMG NGS technical standard",url:"https://pubmed.ncbi.nlm.nih.gov/33927380/"}
+  },
+];
+
+reportScenarios.push(...wgsReportScenarios);
 
 export const emptyReportDraft = (): ReportDraft => Object.fromEntries(reportSectionIds.map((id) => [id, ""])) as ReportDraft;
