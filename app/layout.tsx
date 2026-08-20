@@ -9,7 +9,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "localhost:3000";
   const protocol = requestHeaders.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const imageUrl = `${protocol}://${host}/og-v2.png`;
+  const imageUrl = `${protocol}://${host}/og-wgs.png`;
 
   return {
     title,
@@ -19,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
       description,
       type: "website",
       locale: "zh_CN",
-      images: [{ url: imageUrl, width: 1536, height: 1024, alt: "Variant Atlas 遗传解读训练：从证据到可复核报告" }],
+      images: [{ url: imageUrl, width: 1731, height: 909, alt: "Variant Atlas WES/WGS遗传解读训练：多通道病例分析" }],
     },
     twitter: { card: "summary_large_image", title, description, images: [imageUrl] },
   };

@@ -39,7 +39,7 @@ test("server-renders the Variant Atlas learning workspace", async () => {
 test("renders the complete learning loop and safety boundary", async () => {
   const html = await (await render()).text();
 
-  for (const label of ["课程", "证据规则", "SOP工作流", "病例库", "测验", "报告实验室"]) {
+  for (const label of ["课程", "证据规则", "SOP工作流", "WGS专项", "病例库", "测验", "报告实验室"]) {
     assert.match(html, new RegExp(`>${label}<`));
   }
 
@@ -54,14 +54,16 @@ test("includes the SOP-derived auditable workflow without internal document-cont
   const source = await readFile(new URL("../app/sop-workflow.ts", import.meta.url), "utf8");
   const workspace = await readFile(new URL("../app/learning-workspace.tsx", import.meta.url), "utf8");
 
-  assert.equal((source.match(/id: "/g) ?? []).length, 22);
+  assert.equal((source.match(/id: "/g) ?? []).length, 37);
   assert.equal((source.match(/id: "wes-/g) ?? []).length, 12);
-  for (const label of ["WES病例全流程十二步", "单变异证据底稿十步法", "规范优先级", "阈值登记表", "单变异证据记录字段", "CNV loss", "CNV gain"]) {
+  assert.equal((source.match(/id: "wgs-/g) ?? []).length, 15);
+  for (const label of ["WES病例全流程十二步", "WGS病例全流程十五步", "单变异证据底稿十步法", "规范优先级", "阈值登记表", "单变异证据记录字段", "CNV loss", "CNV gain"]) {
     assert.match(workspace, new RegExp(label));
   }
   assert.match(workspace, /不展示企业文控信息、内部职责或原文阈值/);
   assert.match(workspace, /sopChecked/);
   assert.match(workspace, /wesChecked/);
+  assert.match(workspace, /wgsChecked/);
   assert.match(workspace, /sopBranch/);
   assert.doesNotMatch(workspace, /SOP-RI-047|华大BGI/);
 });
@@ -77,10 +79,27 @@ test("provides structured singleton and family report training", async () => {
     assert.match(reportLab, new RegExp(label));
   }
   assert.equal((reportData.match(/id: "(?:family|single)-/g) ?? []).length, 13);
+  assert.equal((reportData.match(/id: "wgs-(?:family|single)-/g) ?? []).length, 8);
+  assert.match(reportLab, /STRUCTURED WES \/ WGS REPORT STUDIO/);
+  assert.match(reportLab, /report-platform-switch/);
   assert.equal((reportData.match(/no: "\d{2}"/g) ?? []).length, 10);
   assert.match(reportData, /mode: "family"/);
   assert.match(reportData, /mode: "singleton"/);
   assert.match(source, /saveCaseScore\("001",score\)/);
   assert.match(source, /saveCaseScore\("002",pahScore\)/);
   assert.equal(source.match(/JSON\.stringify\(\{answer,step\}\)/g)?.length, 3);
+});
+
+test("provides the complete WGS specialty track", async () => {
+  const track = await readFile(new URL("../app/wgs-track.tsx", import.meta.url), "utf8");
+  const content = await readFile(new URL("../app/wgs-content.ts", import.meta.url), "utf8");
+
+  for (const label of ["WGS不是更大的WES", "28课课程", "15步工作流", "18例矩阵", "三级测验", "规范中心"]) {
+    assert.match(track, new RegExp(label));
+  }
+  assert.equal((content.match(/lesson\("wgs-/g) ?? []).length, 28);
+  assert.equal((content.match(/id: "WGS-\d{3}"/g) ?? []).length, 18);
+  assert.equal((content.match(/id:"w[123]-\d"/g) ?? []).length, 24);
+  assert.match(track, /variant-atlas-wgs-track-v1/);
+  assert.match(track, /未开展、质量不足和未检出/);
 });

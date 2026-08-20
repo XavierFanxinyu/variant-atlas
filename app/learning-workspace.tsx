@@ -3,9 +3,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { boundaryCases, errorPatterns, evidenceDrills, examBanks, lessonAddons, reportTemplates, supplementalLessons, type BoundaryCaseDefinition, type Lesson } from "./learning-content";
 import ReportLab from "./report-lab";
-import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry, wesCaseWorkflowSteps } from "./sop-workflow";
+import WgsTrack from "./wgs-track";
+import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry, wesCaseWorkflowSteps, wgsCaseWorkflowSteps } from "./sop-workflow";
 
-type View = "dashboard" | "case" | "rules" | "sop" | "roadmap" | "courses" | "library" | "exam" | "report" | "mistakes";
+type View = "dashboard" | "case" | "rules" | "sop" | "wgs" | "roadmap" | "courses" | "library" | "exam" | "report" | "mistakes";
 type CaseAnswer = { inheritance: string; evidence: string[]; classification: string; report: string };
 type PahAnswer = {
   inheritance: string;
@@ -207,6 +208,7 @@ export default function LearningWorkspace() {
   const [additionalCaseScores, setAdditionalCaseScores] = useState<Record<string, number>>({});
   const [sopChecked, setSopChecked] = useState<string[]>([]);
   const [wesChecked, setWesChecked] = useState<string[]>([]);
+  const [wgsChecked, setWgsChecked] = useState<string[]>([]);
   const [sopBranch, setSopBranch] = useState<"sequence" | "cnv-loss" | "cnv-gain">("sequence");
 
   useEffect(() => {
@@ -231,6 +233,7 @@ export default function LearningWorkspace() {
         setAdditionalCaseScores(state.additionalCaseScores ?? {});
         setSopChecked(Array.isArray(state.sopChecked) ? Array.from(new Set(state.sopChecked.filter((id: unknown) => typeof id === "string" && sopWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
         setWesChecked(Array.isArray(state.wesChecked) ? Array.from(new Set(state.wesChecked.filter((id: unknown) => typeof id === "string" && wesCaseWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
+        setWgsChecked(Array.isArray(state.wgsChecked) ? Array.from(new Set(state.wgsChecked.filter((id: unknown) => typeof id === "string" && wgsCaseWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
         setSopBranch(["sequence","cnv-loss","cnv-gain"].includes(state.sopBranch) ? state.sopBranch : "sequence");
         /* eslint-enable react-hooks/set-state-in-effect */
       } catch { /* ignore a damaged local draft */ }
@@ -238,8 +241,8 @@ export default function LearningWorkspace() {
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, sopBranch }));
-  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, sopBranch]);
+    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, wgsChecked, sopBranch }));
+  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, wgsChecked, sopBranch]);
 
   const noonanReportGrade = useMemo(() => gradeReport(reportTemplates[0], answer.report), [answer.report]);
   const pahReportGrade = useMemo(() => gradeReport(reportTemplates[1], pahAnswer.report), [pahAnswer.report]);
@@ -282,7 +285,7 @@ export default function LearningWorkspace() {
   const activeDrill = evidenceDrills[drillIndex];
   const drillCorrectCount = evidenceDrills.filter((drill) => drillCompleted.includes(drill.id) && drill.expected.includes(drillAnswers[drill.id])).length;
   const coursePercent = Math.round((lessonDone.length / lessons.length) * 100);
-  const sopPercent = Math.round(((sopChecked.length + wesChecked.length) / (sopWorkflowSteps.length + wesCaseWorkflowSteps.length)) * 100);
+  const sopPercent = Math.round(((sopChecked.length + wesChecked.length + wgsChecked.length) / (sopWorkflowSteps.length + wesCaseWorkflowSteps.length + wgsCaseWorkflowSteps.length)) * 100);
   const scoredCases = ["001","002","003","004","005","006","007","008"].map(id => additionalCaseScores[id] ?? 0);
   const noonanCanAdvance = step < 2 || (step === 2 && Boolean(answer.inheritance)) || step === 3 || (step === 4 && answer.evidence.length > 0) || (step === 5 && Boolean(answer.classification));
   const pahCanAdvance = pahStep < 2 || (pahStep === 2 && Boolean(pahAnswer.inheritance)) || (pahStep === 3 && Boolean(pahAnswer.phase)) || (pahStep === 4 && Boolean(pahAnswer.variant1Class) && Boolean(pahAnswer.variant2Class) && pahAnswer.rationale1.length >= 50 && pahAnswer.rationale2.length >= 50) || (pahStep === 5 && Boolean(pahAnswer.conclusion));
@@ -354,6 +357,7 @@ export default function LearningWorkspace() {
           <button className={view === "courses" ? "active" : ""} onClick={() => navigate("courses")}>课程</button>
           <button className={view === "rules" ? "active" : ""} onClick={() => navigate("rules")}>证据规则</button>
           <button className={view === "sop" ? "active" : ""} onClick={() => navigate("sop")}>SOP工作流</button>
+          <button className={view === "wgs" ? "active" : ""} onClick={() => navigate("wgs")}>WGS专项</button>
           <button className={view === "library" || view === "case" ? "active" : ""} onClick={() => navigate("library")}>病例库</button>
           <button className={view === "exam" ? "active" : ""} onClick={() => navigate("exam")}>测验</button>
           <button className={view === "report" ? "active" : ""} onClick={() => navigate("report")}>报告实验室</button>
@@ -408,8 +412,9 @@ export default function LearningWorkspace() {
               <button onClick={() => navigate("library")}><span>CASE MATRIX</span><b>查看8例覆盖矩阵</b><small>八例均可逐步作答、评分并保存进度</small></button>
               <button onClick={() => navigate("exam")}><span>ASSESSMENT</span><b>完成三级阶段测验</b><small>每级8题即时反馈，错误自动进入错题本</small></button>
               <button onClick={() => navigate("mistakes")}><span>REVIEW</span><b>查看错题本</b><small>{mistakes.length ? `${mistakes.length} 个待巩固主题` : "暂无错题，先完成阶段测验"}</small></button>
-              <button onClick={() => navigate("report")}><span>REPORT LAB</span><b>完成结构化报告审计</b><small>单人/家系双路径 · 10个责任区 · 13类情境</small></button>
-              <button onClick={() => navigate("sop")}><span>SOP WORKFLOW</span><b>完成WES双层底稿</b><small>12步病例流程 + 10步单变异证据审计</small></button>
+              <button onClick={() => navigate("report")}><span>REPORT LAB</span><b>完成结构化报告审计</b><small>WES/WGS · 单人/家系 · 21类情境</small></button>
+              <button onClick={() => navigate("sop")}><span>SOP WORKFLOW</span><b>完成WES/WGS三层底稿</b><small>10步变异 + 12步WES + 15步WGS</small></button>
+              <button onClick={() => navigate("wgs")}><span>WGS SPECIALTY</span><b>进入全基因组专项</b><small>28课 · 15关口 · 18类情境</small></button>
             </section>
 
             <section className="principle-strip">
@@ -498,8 +503,8 @@ export default function LearningWorkspace() {
         {view === "sop" && (
           <section className="sop-page">
             <div className="sop-hero">
-              <div><span className="eyebrow">SOP-ALIGNED WORKFLOW · GENERALIZED</span><h1>临床变异解读<br />可审计工作流</h1><p>把用户提供的临床变异解读SOP提炼为通用训练路径：每一步都明确输入、判断、记录产物和停止条件。这里不展示企业文控信息、内部职责或原文阈值。</p></div>
-              <aside><span>双层底稿完成度</span><strong>{sopPercent}<small>%</small></strong><div className="mini-progress"><i style={{width:`${sopPercent}%`}}/></div><p>{sopChecked.length + wesChecked.length} / {sopWorkflowSteps.length + wesCaseWorkflowSteps.length} 个关口已自检</p><button disabled={!sopChecked.length && !wesChecked.length} onClick={() => {setSopChecked([]);setWesChecked([])}}>重置本次自检</button></aside>
+              <div><span className="eyebrow">WES / WGS SOP-ALIGNED WORKFLOW</span><h1>临床变异解读<br />可审计工作流</h1><p>把用户提供的变异、WES与WGS解读SOP提炼为通用训练路径：每一步都明确输入、判断、记录产物和停止条件。这里不展示企业文控信息、内部职责或原文阈值。</p></div>
+              <aside><span>三层底稿完成度</span><strong>{sopPercent}<small>%</small></strong><div className="mini-progress"><i style={{width:`${sopPercent}%`}}/></div><p>{sopChecked.length + wesChecked.length + wgsChecked.length} / {sopWorkflowSteps.length + wesCaseWorkflowSteps.length + wgsCaseWorkflowSteps.length} 个关口已自检</p><button disabled={!sopChecked.length && !wesChecked.length && !wgsChecked.length} onClick={() => {setSopChecked([]);setWesChecked([]);setWgsChecked([])}}>重置本次自检</button></aside>
             </div>
 
             <div className="sop-boundary"><b>适用边界</b><p>真实工作时的优先级是：现行疾病/基因特异规范 ＞ ClinGen通用建议 ＞ ACMG/AMP基础框架 ＞ 经批准的实验室本地默认。任何阈值都必须记录版本和适用范围；本页不能替代你所在实验室的受控SOP。</p></div>
@@ -512,6 +517,12 @@ export default function LearningWorkspace() {
             <section className="sop-section workflow-section wes-workflow-section">
               <div className="section-heading"><div><span>12 CASE GATES</span><h2>WES病例全流程十二步</h2></div><p>这一层回答“一个病例怎样从样本进入报告”，覆盖单人/三联体路由、质量停止关口、多变异通道、未解决升级、验证和双重复核。</p></div>
               <div className="sop-workflow wes-case-workflow">{wesCaseWorkflowSteps.map((item,index) => { const done=wesChecked.includes(item.id); return <article className={done ? "done" : ""} key={item.id}><button aria-pressed={done} onClick={() => setWesChecked(done ? wesChecked.filter(id => id !== item.id) : [...wesChecked,item.id])}><span>{done ? "✓" : String(index+1).padStart(2,"0")}</span><b>{done ? "已留病例底稿" : "标记已完成"}</b></button><div><h3>{item.title}</h3><p>{item.decision}</p><dl><div><dt>必须记录</dt><dd>{item.record}</dd></div><div><dt>停止条件</dt><dd>{item.stop}</dd></div></dl></div></article>})}</div>
+            </section>
+
+            <section className="sop-section workflow-section wgs-workflow-section">
+              <div className="section-heading"><div><span>15 CASE GATES</span><h2>WGS病例全流程十五步</h2></div><p>这一层把WGS拆成八条可审计分析通道，覆盖产前/产后、单人/家系、质量停止、复杂事件重建、验证、结果分层与重分析。</p></div>
+              <div className="sop-workflow wgs-case-workflow">{wgsCaseWorkflowSteps.map((item,index) => { const done=wgsChecked.includes(item.id); return <article className={done ? "done" : ""} key={item.id}><button aria-pressed={done} onClick={() => setWgsChecked(done ? wgsChecked.filter(id => id !== item.id) : [...wgsChecked,item.id])}><span>{done ? "✓" : String(index+1).padStart(2,"0")}</span><b>{done ? "已留WGS底稿" : "标记已完成"}</b></button><div><h3>{item.title}</h3><p>{item.decision}</p><dl><div><dt>必须记录</dt><dd>{item.record}</dd></div><div><dt>停止条件</dt><dd>{item.stop}</dd></div></dl></div></article>})}</div>
+              <div className="privacy-note"><b>专项深度训练</b><p>本页用于完整流程自检；28课课程、18例矩阵与三级测验请进入顶部“WGS专项”。两处进度分别保存在当前浏览器。</p></div>
             </section>
 
             <section className="sop-section workflow-section">
@@ -539,6 +550,8 @@ export default function LearningWorkspace() {
             <section className="sop-sources"><h2>本次整合的规范骨架</h2><div><a href="https://clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">ClinGen Variant Classification Guidance ↗</a><a href="https://cspec.genome.network/cspec/ui/svi/" target="_blank" rel="noreferrer">ClinGen Criteria Specification Registry ↗</a><a href="https://clinicalgenome.org/working-groups/dosage-sensitivity-curation/" target="_blank" rel="noreferrer">ClinGen Dosage Sensitivity ↗</a></div><p>内容来自用户提供SOP的通用化结构提炼，并结合平台已采用的ACMG/AMP与ClinGen框架重新组织；未复制内部表格、文控记录或机构专属执行口径。</p></section>
           </section>
         )}
+
+        {view === "wgs" && <WgsTrack />}
 
         {view === "case" && activeCaseId === "001" && (
           <section className="case-workspace">
@@ -642,7 +655,7 @@ export default function LearningWorkspace() {
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.1 SOP增强版</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.2 WGS专项版</span></footer>
     </div>
   );
 }

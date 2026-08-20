@@ -9,6 +9,7 @@ import {
   type ReportDraft,
   type ReportExpectation,
   type ReportMode,
+  type ReportPlatform,
   type ReportScenario,
   type ReportSectionId,
 } from "./report-lab-data";
@@ -83,6 +84,7 @@ export function auditReport(scenario: ReportScenario, draft: ReportDraft) {
 }
 
 export default function ReportLab({ bestScore, onScore }: { bestScore: number; onScore: (score: number) => void }) {
+  const [platform, setPlatform] = useState<ReportPlatform>("WES");
   const [mode, setMode] = useState<ReportMode>("family");
   const [scenarioId, setScenarioId] = useState("family-denovo");
   const [step, setStep] = useState(0);
@@ -100,6 +102,7 @@ export default function ReportLab({ bestScore, onScore }: { bestScore: number; o
       if (savedScenario) {
         setScenarioId(savedScenario.id);
         setMode(savedScenario.mode);
+        setPlatform(savedScenario.platform ?? "WES");
       }
       if (state.drafts && typeof state.drafts === "object") setDrafts(state.drafts);
       if (Array.isArray(state.revealed)) setRevealed(state.revealed.filter((item: unknown) => typeof item === "string"));
@@ -112,7 +115,7 @@ export default function ReportLab({ bestScore, onScore }: { bestScore: number; o
     window.localStorage.setItem("variant-atlas-report-lab-v2", JSON.stringify({ scenarioId, drafts, revealed, step }));
   }, [scenarioId, drafts, revealed, step]);
 
-  const scenarios = reportScenarios.filter((item) => item.mode === mode);
+  const scenarios = reportScenarios.filter((item) => item.mode === mode && (item.platform ?? "WES") === platform);
   const scenario = reportScenarios.find((item) => item.id === scenarioId) ?? scenarios[0];
   const draft = { ...emptyReportDraft(), ...(drafts[scenario.id] ?? {}) };
   const section = reportSections[step];
@@ -121,9 +124,20 @@ export default function ReportLab({ bestScore, onScore }: { bestScore: number; o
   const isRevealed = revealed.includes(revealKey);
 
   function changeMode(nextMode: ReportMode) {
-    const first = reportScenarios.find((item) => item.mode === nextMode);
+    const first = reportScenarios.find((item) => item.mode === nextMode && (item.platform ?? "WES") === platform);
     if (!first) return;
     setMode(nextMode);
+    setScenarioId(first.id);
+    setStep(0);
+    setSubmitted(false);
+  }
+
+  function changePlatform(nextPlatform: ReportPlatform) {
+    const first = reportScenarios.find((item) => (item.platform ?? "WES") === nextPlatform && item.mode === mode)
+      ?? reportScenarios.find((item) => (item.platform ?? "WES") === nextPlatform);
+    if (!first) return;
+    setPlatform(nextPlatform);
+    setMode(first.mode);
     setScenarioId(first.id);
     setStep(0);
     setSubmitted(false);
@@ -134,6 +148,7 @@ export default function ReportLab({ bestScore, onScore }: { bestScore: number; o
     if (!next) return;
     setScenarioId(next.id);
     setMode(next.mode);
+    setPlatform(next.platform ?? "WES");
     setStep(0);
     setSubmitted(false);
   }
@@ -152,16 +167,21 @@ export default function ReportLab({ bestScore, onScore }: { bestScore: number; o
     <section className="page-section report-studio-page">
       <div className="report-studio-hero">
         <div>
-          <span className="eyebrow">STRUCTURED WES REPORT STUDIO</span>
-          <h1>从病例底稿到可复核报告</h1>
-          <p>按照真实WES报告的十个责任区逐步撰写。单人路径训练来源与相位的不确定性，家系路径训练成员基因型、来源、相位、共分离和亲缘确认。</p>
+          <span className="eyebrow">STRUCTURED WES / WGS REPORT STUDIO</span>
+          <h1>从多通道病例底稿到可复核报告</h1>
+          <p>按照WES/WGS报告的十个责任区逐步撰写。单人路径训练来源、相位与残余风险，家系路径训练成员基因型、复杂事件、来源、相位和亲缘确认。</p>
         </div>
         <div className="report-studio-metrics" aria-label="报告实验室概况">
-          <span><b>2</b>分析路径</span><span><b>10</b>报告责任区</span><span><b>13</b>高频情境</span><span><b>5</b>评分维度</span>
+          <span><b>2</b>检测平台</span><span><b>10</b>报告责任区</span><span><b>{reportScenarios.length}</b>高频情境</span><span><b>5</b>评分维度</span>
         </div>
       </div>
 
       <div className="report-boundary-note"><b>隐私与用途边界</b><p>仅使用站内教学情境，不要粘贴真实患者姓名、编号或可识别信息。评分用于训练，不代表临床签发资格，也不判断输入事实真伪。</p></div>
+
+      <div className="report-platform-switch" aria-label="选择检测平台">
+        <button className={platform === "WES" ? "active" : ""} onClick={() => changePlatform("WES")}><span>WES</span><b>外显子组报告</b><small>序列 · 外显子CNV · 单人/家系边界</small></button>
+        <button className={platform === "WGS" ? "active" : ""} onClick={() => changePlatform("WGS")}><span>WGS</span><b>全基因组报告</b><small>CNV · SV · ROH/UPD · STR · mtDNA</small></button>
+      </div>
 
       <div className="report-path-switch" aria-label="选择报告路径">
         <button className={mode === "family" ? "active" : ""} onClick={() => changeMode("family")} aria-pressed={mode === "family"}>
