@@ -424,7 +424,7 @@ export const boundaryCases: BoundaryCaseDefinition[] = [
     steps: [
       { title:"为什么WES可能漏检", lead:"先判断检测范围，再讨论变异意义。", stem:"常规WES阴性，WGS在CFTR内含子深部检出c.3718-2477C>T。最合理的解释是什么？", options:[["target","该位点通常不在常规外显子捕获目标内"],["artifact","所有深内含子变异都是伪影"],["benign","不在外显子所以必为良性"],["coverage","WES一定能可靠覆盖全部内含子"]], answer:"target", feedback:"深内含子位点通常不在常规WES目标范围；阴性外显子组不能排除这类机制。" },
       { title:"RNA机制", lead:"把预测与观察到的剪接结果分开。", stem:"公开RNA研究显示插入84 bp伪外显子并带提前终止密码子。应怎样记录？", options:[["observed","记录为已观察到的异常剪接，并注明实验材料与来源"],["predicted","只写预测软件提示"],["protein","直接声称患者完全无CFTR蛋白"],["ignore","RNA结果与分类无关"]], answer:"observed", feedback:"该变异已有异常剪接实验证据；但仍需保留实验体系、异常转录比例和疾病机制边界。" },
-      { title:"剪接证据赋分", lead:"同一底层RNA结果不能机械重复计分。", stem:"按ClinGen SVI剪接框架，最稳妥的处理是？", options:[["pvs1rna","按基因特异决策树保守确定PVS1(RNA)，不再用同一RNA结果重复叠加PS3"],["double","PVS1极强、PS3强、PP3强全部叠加"],["ps3only","所有RNA实验只能使用PS3"],["none","非经典位点永远不能使用PVS1"]], answer:"pvs1rna", feedback:"ClinGen建议将观察到的剪接影响路由到PVS1(RNA)框架，并处理与预测及功能证据的依赖性。" },
+      { title:"剪接证据赋分", lead:"同一底层RNA结果不能机械重复计分。", stem:"按ClinGen剪接建议（文件为SVI历史署名），最稳妥的处理是？", options:[["pvs1rna","按基因特异决策树保守确定PVS1(RNA)，不再用同一RNA结果重复叠加PS3"],["double","PVS1极强、PS3强、PP3强全部叠加"],["ps3only","所有RNA实验只能使用PS3"],["none","非经典位点永远不能使用PVS1"]], answer:"pvs1rna", feedback:"ClinGen建议将观察到的剪接影响路由到PVS1(RNA)框架，并处理与预测及功能证据的依赖性。" },
       { title:"隐性相位", lead:"变异致病性与病例基因型仍需分开。", stem:"另一条CFTR致病变异由母亲遗传，本变异由父亲遗传。病例层最关键的关系是？", options:[["trans","两条变异已确认反式"],["cis","两条变异为顺式"],["unknown","相位仍未知"],["dominant","符合显性遗传"]], answer:"trans", feedback:"分别来自父母可确认反式，为隐性病病例级整合提供关键相位信息。" },
       { title:"表型强弱", lead:"部分正常转录可产生较轻表型。", stem:"患者胰腺功能尚可但汗氯升高、反复呼吸道症状。如何处理？", options:[["compatible","与该变异已知的残余功能/非经典表型可以相容"],["exclude","较轻表型排除CFTR相关病"],["downgrade","自动把致病变异降为VUS"],["ignore","表型无需纳入病例结论"]], answer:"compatible", feedback:"c.3718-2477C>T可保留部分正常转录并与较轻或非经典表现相关，不能只按严重度否定。" },
       { title:"病例结论", lead:"疾病名称取决于完整基因型与临床诊断标准。", stem:"两条致病等位基因反式且临床符合时，最佳表述是？", options:[["support","结果支持CFTR相关疾病的分子诊断，具体临床分型结合专科评估"],["variantonly","只报告单个变异，不做病例整合"],["certain","仅凭变异即可确定全部临床严重度"],["carrier","判定为单纯携带者"]], answer:"support", feedback:"可以支持病例级分子诊断，但临床类型、严重度和治疗仍需结合汗氯、器官受累及专科评价。" },
@@ -432,7 +432,7 @@ export const boundaryCases: BoundaryCaseDefinition[] = [
     reportPrompt:"撰写结论，包含两条变异及反式关系、深内含子与RNA机制、病例相关性、检测限制和临床分型边界。",
     reportChecks:[["CFTR与HGVS",["CFTR","c.3718-2477"]],["反式",["反式"]],["剪接机制",["剪接","RNA","伪外显子"]],["病例结论",["支持","分子诊断"]]],
     reportExample:"检出CFTR NM_000492.4:c.3718-2477C>T深内含子致病变异，与另一条致病变异经家系验证位于反式。公开RNA研究证实该变异导致异常伪外显子插入；结合临床表现，结果支持CFTR相关疾病的分子诊断。具体临床分型及管理应结合汗氯和专科评估；常规WES对深内含子变异存在覆盖限制。",
-    sources:[{label:"ClinVar Variation ID 7166",url:"https://www.ncbi.nlm.nih.gov/clinvar/variation/7166/"},{label:"ClinGen SVI Splicing",url:"https://pubmed.ncbi.nlm.nih.gov/37352859/"},{label:"GeneReviews：Cystic Fibrosis",url:"https://www.ncbi.nlm.nih.gov/books/NBK1250/"}],
+    sources:[{label:"ClinVar Variation ID 7166",url:"https://www.ncbi.nlm.nih.gov/clinvar/variation/7166/"},{label:"ClinGen剪接建议（SVI历史署名）",url:"https://pubmed.ncbi.nlm.nih.gov/37352859/"},{label:"GeneReviews：Cystic Fibrosis",url:"https://www.ncbi.nlm.nih.gov/books/NBK1250/"}],
   },
   {
     id: "006",

@@ -2,11 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { boundaryCases, errorPatterns, evidenceDrills, examBanks, lessonAddons, reportTemplates, supplementalLessons, type BoundaryCaseDefinition, type Lesson } from "./learning-content";
+import DeepLessonPanel from "./deep-lesson-panel";
+import GuidelineCenter from "./guideline-center";
+import LearningRecordCenter from "./learning-record-center";
+import { ensureLearningSchema, notifyLearningProgress } from "./learning-record";
 import ReportLab from "./report-lab";
 import WgsTrack from "./wgs-track";
 import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry, wesCaseWorkflowSteps, wgsCaseWorkflowSteps } from "./sop-workflow";
 
-type View = "dashboard" | "case" | "rules" | "sop" | "wgs" | "roadmap" | "courses" | "library" | "exam" | "report" | "mistakes";
+type View = "dashboard" | "case" | "rules" | "sop" | "wgs" | "roadmap" | "record" | "guidelines" | "courses" | "library" | "exam" | "report" | "mistakes";
 type CaseAnswer = { inheritance: string; evidence: string[]; classification: string; report: string };
 type PahAnswer = {
   inheritance: string;
@@ -124,7 +128,7 @@ const caseLibrary = [
   { id: "002", title: "PAH缺乏症", gene: "PAH", mode: "AR · 复合杂合", focus: "PM3 / 两等位基因 / 反式", status: "开放", tone: "live", source: "ClinGen PAH VCEP + GeneReviews" },
   { id: "003", title: "家族性高胆固醇血症", gene: "LDLR", mode: "AD · 家系", focus: "PVS1强度 / RNA / 共分离 / 冲突层级", status: "开放", tone: "live", source: "ClinGen FH VCEP + GeneReviews" },
   { id: "004", title: "单等位基因与阴性升级", gene: "PAH", mode: "AR · 仅检出一条P", focus: "未确诊边界 / CNV / 深内含子 / BH4鉴别", status: "开放", tone: "live", source: "GeneReviews + ClinGen PAH VCEP" },
-  { id: "005", title: "深内含子剪接变异", gene: "CFTR", mode: "AR · WGS补充", focus: "PVS1(RNA) / 深内含子 / 证据依赖", status: "开放", tone: "live", source: "ClinGen SVI Splicing + CFTR2" },
+  { id: "005", title: "深内含子剪接变异", gene: "CFTR", mode: "AR · WGS补充", focus: "PVS1(RNA) / 深内含子 / 证据依赖", status: "开放", tone: "live", source: "ClinGen剪接建议（SVI历史署名）+ CFTR2" },
   { id: "006", title: "高频但低外显率", gene: "GJB2", mode: "AR · 专家组例外", focus: "BA1例外 / 提交层级 / 外显率", status: "开放", tone: "live", source: "ClinGen Hearing Loss VCEP" },
   { id: "007", title: "低比例组织嵌合", gene: "PIK3CA", mode: "mosaic AD · 受累组织", focus: "样本选择 / 低VAF / 疾病语境", status: "开放", tone: "live", source: "ClinGen Brain Malformations VCEP + GeneReviews" },
   { id: "008", title: "外显子级CNV", gene: "DMD", mode: "XL · exon 50 deletion", focus: "CNV确认 / 阅读框 / 报告分辨率", status: "开放", tone: "live", source: "GeneReviews + FDA公开材料" },
@@ -241,7 +245,9 @@ export default function LearningWorkspace() {
   }, []);
 
   useEffect(() => {
+    ensureLearningSchema(window.localStorage);
     window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, wgsChecked, sopBranch }));
+    notifyLearningProgress();
   }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, wgsChecked, sopBranch]);
 
   const noonanReportGrade = useMemo(() => gradeReport(reportTemplates[0], answer.report), [answer.report]);
@@ -357,12 +363,13 @@ export default function LearningWorkspace() {
           <button className={view === "courses" ? "active" : ""} onClick={() => navigate("courses")}>课程</button>
           <button className={view === "rules" ? "active" : ""} onClick={() => navigate("rules")}>证据规则</button>
           <button className={view === "sop" ? "active" : ""} onClick={() => navigate("sop")}>SOP工作流</button>
+          <button className={view === "guidelines" ? "active" : ""} onClick={() => navigate("guidelines")}>规范更新</button>
           <button className={view === "wgs" ? "active" : ""} onClick={() => navigate("wgs")}>WGS专项</button>
           <button className={view === "library" || view === "case" ? "active" : ""} onClick={() => navigate("library")}>病例库</button>
           <button className={view === "exam" ? "active" : ""} onClick={() => navigate("exam")}>测验</button>
           <button className={view === "report" ? "active" : ""} onClick={() => navigate("report")}>报告实验室</button>
         </nav>
-        <button className="profile" onClick={() => navigate("roadmap")}><span>{certification.L3 ? "L3" : certification.L2 ? "L2" : certification.L1 ? "L1" : "L0"}</span><div><b>{certification.L3 ? "独立解读" : certification.L2 ? "证据评估" : certification.L1 ? "基础识别" : "学习中"}</b><small>查看能力认证</small></div></button>
+        <button className="profile" onClick={() => navigate("record")}><span>{certification.L3 ? "L3" : certification.L2 ? "L2" : certification.L1 ? "L1" : "L0"}</span><div><b>{certification.L3 ? "独立解读" : certification.L2 ? "证据评估" : certification.L1 ? "基础识别" : "学习中"}</b><small>统一学习档案</small></div></button>
       </header>
 
       <main>
@@ -392,7 +399,7 @@ export default function LearningWorkspace() {
               <div><span>课程进度</span><strong>{coursePercent}<small>% · 24课</small></strong></div>
               <div><span>开放病例</span><strong>8<small> / 8 个情境</small></strong></div>
               <div><span>证据手册</span><strong>28<small> 条标准全覆盖</small></strong></div>
-              <div><span>证据快照</span><strong>2026<small>-08-13</small></strong></div>
+              <div><span>规范复核</span><strong>2026<small>-08-27</small></strong></div>
             </section>
 
             <section className="section-block">
@@ -415,6 +422,8 @@ export default function LearningWorkspace() {
               <button onClick={() => navigate("report")}><span>REPORT LAB</span><b>完成结构化报告审计</b><small>WES/WGS · 单人/家系 · 21类情境</small></button>
               <button onClick={() => navigate("sop")}><span>SOP WORKFLOW</span><b>完成WES/WGS三层底稿</b><small>10步变异 + 12步WES + 15步WGS</small></button>
               <button onClick={() => navigate("wgs")}><span>WGS SPECIALTY</span><b>进入全基因组专项</b><small>28课 · 15关口 · 18类情境</small></button>
+              <button onClick={() => navigate("guidelines")}><span>GUIDANCE VERSIONS</span><b>打开规范版本中心</b><small>适用范围 · 版本日期 · 高风险边界</small></button>
+              <button onClick={() => navigate("record")}><span>LEARNING PASSPORT</span><b>查看统一学习档案</b><small>本地汇总 · 导入导出 · 综合认证</small></button>
             </section>
 
             <section className="principle-strip">
@@ -437,6 +446,7 @@ export default function LearningWorkspace() {
               <div className="lesson-meta"><span>MODULE {activeLesson.no} · LESSON {currentLessonIndex + 1}/4</span><b>{activeLesson.duration}</b></div>
               <h1>{activeLesson.title}</h1><p className="lesson-objective">学习目标：{activeLesson.objective}</p>
               {activeLesson.sections.map(([title, body], index) => <section key={title}><span>{String(index + 1).padStart(2,"0")}</span><div><h2>{title}</h2><p>{body}</p></div></section>)}
+              <DeepLessonPanel lessonId={activeLesson.id} />
               <div className="lesson-checkpoint"><b>本节检查点</b><p>{activeLesson.checkpoint}</p></div>
               {lessonPractice && <div className="lesson-practice"><span className="eyebrow">DECISION PRACTICE</span><h2>本课判断练习</h2><p>{lessonPractice.prompt}</p><ul>{lessonPractice.tasks.map(task => <li key={task}>{task}</li>)}</ul><button className="secondary" onClick={() => setPracticeRevealed(Array.from(new Set([...practiceRevealed, activeLesson.id])))}>{practiceRevealed.includes(activeLesson.id) ? "答案已揭示" : "完成思考后揭示答案"}</button>{practiceRevealed.includes(activeLesson.id) && <div className="practice-answer"><b>参考思路</b><p>{lessonPractice.reveal}</p></div>}</div>}
               <div className="lesson-sources"><b>原始来源</b>{lessonSources.map(source => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}>{source.label} ↗</a>)}</div>
@@ -462,6 +472,10 @@ export default function LearningWorkspace() {
         )}
 
         {view === "report" && <ReportLab bestScore={reportBestScore} onScore={(value) => setReportBestScore((current) => Math.max(current, value))} />}
+
+        {view === "record" && <LearningRecordCenter />}
+
+        {view === "guidelines" && <GuidelineCenter />}
 
         {view === "mistakes" && (
           <section className="page-section">
@@ -655,7 +669,7 @@ export default function LearningWorkspace() {
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.2 WGS专项版</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.3 深度病例版</span></footer>
     </div>
   );
 }

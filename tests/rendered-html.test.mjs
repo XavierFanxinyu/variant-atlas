@@ -39,7 +39,7 @@ test("server-renders the Variant Atlas learning workspace", async () => {
 test("renders the complete learning loop and safety boundary", async () => {
   const html = await (await render()).text();
 
-  for (const label of ["课程", "证据规则", "SOP工作流", "WGS专项", "病例库", "测验", "报告实验室"]) {
+  for (const label of ["课程", "证据规则", "SOP工作流", "规范更新", "WGS专项", "病例库", "测验", "报告实验室"]) {
     assert.match(html, new RegExp(`>${label}<`));
   }
 
@@ -102,4 +102,37 @@ test("provides the complete WGS specialty track", async () => {
   assert.equal((content.match(/id:"w[123]-\d"/g) ?? []).length, 24);
   assert.match(track, /variant-atlas-wgs-track-v1/);
   assert.match(track, /未开展、质量不足和未检出/);
+});
+
+test("adds long-form lessons, flagship cases and version-aware guidance", async () => {
+  const workspace = await readFile(new URL("../app/learning-workspace.tsx", import.meta.url), "utf8");
+  const track = await readFile(new URL("../app/wgs-track.tsx", import.meta.url), "utf8");
+  const deep = await readFile(new URL("../app/deep-lessons.ts", import.meta.url), "utf8");
+  const flagship = await readFile(new URL("../app/flagship-cases.ts", import.meta.url), "utf8");
+  const guidance = await readFile(new URL("../app/guideline-registry.ts", import.meta.url), "utf8");
+
+  assert.equal((deep.match(/level:/g) ?? []).length, 13); // type declaration plus 12 lessons
+  assert.equal((flagship.match(/id:"F-WGS-\d{2}"/g) ?? []).length, 6);
+  assert.equal((guidance.match(/\{ id:"/g) ?? []).length, 9);
+  assert.match(workspace, /<DeepLessonPanel lessonId=/);
+  assert.match(workspace, /<GuidelineCenter/);
+  assert.match(track, /6个旗舰病例/);
+  assert.match(track, /<FlagshipCaseLab/);
+  assert.match(track, /examBest/);
+  assert.match(track, /currentGate\.question/);
+  assert.doesNotMatch(track, /currentGate\.prompt/);
+});
+
+test("provides a versioned local learning archive with safe import and reset", async () => {
+  const record = await readFile(new URL("../app/learning-record.ts", import.meta.url), "utf8");
+  const center = await readFile(new URL("../app/learning-record-center.tsx", import.meta.url), "utf8");
+
+  for (const symbol of ["LEARNING_RECORD_SCHEMA = 3", "ensureLearningSchema", "exportLearningArchive", "validateLearningArchive", "importLearningArchive", "resetLearningArchive", "summarizeLearning"]) {
+    assert.match(record, new RegExp(symbol));
+  }
+  assert.match(record, /startsWith\("variant-atlas-"\)/);
+  assert.match(center, /统一学习档案/);
+  assert.match(center, /导出学习档案/);
+  assert.match(center, /导入学习档案/);
+  assert.match(center, /window\.confirm/);
 });
