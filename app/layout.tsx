@@ -3,7 +3,7 @@ import { headers } from "next/headers";
 import "./globals.css";
 
 const title = "Variant Atlas｜遗传解读训练";
-const description = "从证据规则到真实病例推理的 WES/WGS 单基因病解读学习工作台。";
+const description = "无需登录即可使用的 WES/WGS 单基因病遗传解读学习平台：课程、病例、ACMG证据、SOP工作流与报告训练。";
 
 export async function generateMetadata(): Promise<Metadata> {
   const requestHeaders = await headers();

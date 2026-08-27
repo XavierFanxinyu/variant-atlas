@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { notifyLearningProgress } from "./learning-record";
 import {
   emptyReportDraft,
   reportScenarios,
@@ -113,6 +114,7 @@ export default function ReportLab({ bestScore, onScore }: { bestScore: number; o
 
   useEffect(() => {
     window.localStorage.setItem("variant-atlas-report-lab-v2", JSON.stringify({ scenarioId, drafts, revealed, step }));
+    notifyLearningProgress();
   }, [scenarioId, drafts, revealed, step]);
 
   const scenarios = reportScenarios.filter((item) => item.mode === mode && (item.platform ?? "WES") === platform);
