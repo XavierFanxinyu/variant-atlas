@@ -22,7 +22,8 @@ export const flagshipCases: FlagshipCase[] = [
     { q:"患者RNA出现预期伪外显子后？", options:["自动叠加PVS1+PS3+PP3","按剪接规范做证据依赖审计","直接PS4","不再核查对照"], answer:1, rationale:"同一底层RNA数据不可重复计权。" },
     { q:"教学重组病例能否作为新的独立病例证据？", options:["能","不能","只ClinVar能","只WGS能"], answer:1, rationale:"它用于训练推理，不是独立患者观察。" },
   ], sources:[
-    { label:"ClinGen Variant Classification Guidance", url:"https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" },
+    { label:"ClinGen剪接建议 · Walker et al. 2023 · PMID 37352859", url:"https://pubmed.ncbi.nlm.nih.gov/37352859/" },
+    { label:"ClinGen剪接小组答疑 · 2024-03-22 · PVS1(RNA)适用边界", url:"https://www.clinicalgenome.org/docs/clingen-svi-splicing-subgroup-response-to-feedback/" },
     { label:"CFTR2", url:"https://cftr2.org/" },
     { label:"ACMG/AMP 2015", url:"https://pubmed.ncbi.nlm.nih.gov/25741868/" },
   ] },

@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { boundaryCases, errorPatterns, evidenceDrills, examBanks, lessonAddons, reportTemplates, supplementalLessons, type BoundaryCaseDefinition, type Lesson } from "./learning-content";
 import DeepLessonPanel from "./deep-lesson-panel";
 import GuidelineCenter from "./guideline-center";
 import LearningRecordCenter from "./learning-record-center";
-import { ensureLearningSchema, notifyLearningProgress } from "./learning-record";
+import ReviewCenter from "./review-center";
+import { useProgressPersistence } from "./use-progress-persistence";
 import ReportLab from "./report-lab";
 import WgsTrack from "./wgs-track";
 import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry, wesCaseWorkflowSteps, wgsCaseWorkflowSteps } from "./sop-workflow";
@@ -198,6 +199,7 @@ export default function LearningWorkspace() {
   const [examAnswers, setExamAnswers] = useState<number[]>(Array(examQuestions.length).fill(-1));
   const [examSubmitted, setExamSubmitted] = useState(false);
   const [examResults, setExamResults] = useState<Partial<Record<keyof typeof examBanks, number>>>({});
+  const [examResponses, setExamResponses] = useState<Record<string, number>>({});
   const [mistakes, setMistakes] = useState<string[]>([]);
   const [ruleDirection, setRuleDirection] = useState("全部");
   const [ruleDomain, setRuleDomain] = useState("全部");
@@ -215,40 +217,27 @@ export default function LearningWorkspace() {
   const [wgsChecked, setWgsChecked] = useState<string[]>([]);
   const [sopBranch, setSopBranch] = useState<"sequence" | "cnv-loss" | "cnv-gain">("sequence");
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("variant-atlas-demo");
-    if (saved) {
-      try {
-        const state = JSON.parse(saved);
-        /* eslint-disable react-hooks/set-state-in-effect -- one-time hydration of the user's local learning draft */
-        setStep(Math.max(0, Math.min(6, Number(state.step) || 0)));
-        setAnswer(state.answer ?? { inheritance: "", evidence: [], classification: "", report: "" });
-        setActiveCaseId(state.activeCaseId ?? "001");
-        setPahStep(Math.max(0, Math.min(6, Number(state.pahStep) || 0)));
-        setPahAnswer(state.pahAnswer ?? emptyPahAnswer);
-        setLessonDone(state.lessonDone ?? []);
-        setPracticeRevealed(state.practiceRevealed ?? []);
-        setExamResults(state.examResults ?? {});
-        setMistakes(state.mistakes ?? []);
-        setDrillAnswers(state.drillAnswers ?? {});
-        setDrillRationales(state.drillRationales ?? {});
-        setDrillCompleted(state.drillCompleted ?? []);
-        setReportBestScore(state.reportBestScore ?? 0);
-        setAdditionalCaseScores(state.additionalCaseScores ?? {});
-        setSopChecked(Array.isArray(state.sopChecked) ? Array.from(new Set(state.sopChecked.filter((id: unknown) => typeof id === "string" && sopWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
-        setWesChecked(Array.isArray(state.wesChecked) ? Array.from(new Set(state.wesChecked.filter((id: unknown) => typeof id === "string" && wesCaseWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
-        setWgsChecked(Array.isArray(state.wgsChecked) ? Array.from(new Set(state.wgsChecked.filter((id: unknown) => typeof id === "string" && wgsCaseWorkflowSteps.some(stepItem => stepItem.id === id)))) : []);
-        setSopBranch(["sequence","cnv-loss","cnv-gain"].includes(state.sopBranch) ? state.sopBranch : "sequence");
-        /* eslint-enable react-hooks/set-state-in-effect */
-      } catch { /* ignore a damaged local draft */ }
-    }
-  }, []);
-
-  useEffect(() => {
-    ensureLearningSchema(window.localStorage);
-    window.localStorage.setItem("variant-atlas-demo", JSON.stringify({ step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, wgsChecked, sopBranch }));
-    notifyLearningProgress();
-  }, [step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, wgsChecked, sopBranch]);
+  useProgressPersistence("variant-atlas-demo", { step, answer, activeCaseId, pahStep, pahAnswer, lessonDone, practiceRevealed, examResults, examResponses, mistakes, drillAnswers, drillRationales, drillCompleted, reportBestScore, additionalCaseScores, sopChecked, wesChecked, wgsChecked, sopBranch }, (state) => {
+    setStep(state.step);
+    setAnswer(state.answer);
+    setActiveCaseId(state.activeCaseId);
+    setPahStep(state.pahStep);
+    setPahAnswer(state.pahAnswer);
+    setLessonDone(state.lessonDone);
+    setPracticeRevealed(state.practiceRevealed);
+    setExamResults(state.examResults);
+    setExamResponses(state.examResponses);
+    setMistakes(state.mistakes);
+    setDrillAnswers(state.drillAnswers);
+    setDrillRationales(state.drillRationales);
+    setDrillCompleted(state.drillCompleted);
+    setReportBestScore(state.reportBestScore);
+    setAdditionalCaseScores(state.additionalCaseScores);
+    setSopChecked(state.sopChecked);
+    setWesChecked(state.wesChecked);
+    setWgsChecked(state.wgsChecked);
+    setSopBranch(state.sopBranch);
+  });
 
   const noonanReportGrade = useMemo(() => gradeReport(reportTemplates[0], answer.report), [answer.report]);
   const pahReportGrade = useMemo(() => gradeReport(reportTemplates[1], pahAnswer.report), [pahAnswer.report]);
@@ -298,10 +287,11 @@ export default function LearningWorkspace() {
   const certification = {
     L1: lessonDone.length >= 6 && (examResults.L1 ?? 0) >= 80,
     L2: lessonDone.length >= 16 && (examResults.L2 ?? 0) >= 80 && drillCorrectCount >= 5 && scoredCases.every(value => value >= 70),
-    L3: lessonDone.length === lessons.length && (examResults.L3 ?? 0) >= 80 && reportBestScore >= 80 && scoredCases.every(value => value >= 85),
+    L3: lessonDone.length === lessons.length && (["L1", "L2", "L3"] as const).every(level => (examResults[level] ?? 0) >= 80) && drillCorrectCount >= 5 && reportBestScore >= 80 && scoredCases.every(value => value >= 85),
   };
 
   function submitExam() {
+    setExamResponses(value => ({ ...value, ...Object.fromEntries(currentExam.map((question, index) => [question.id, examAnswers[index]])) }));
     const nextMistakes = currentExam.filter((question, index) => examAnswers[index] !== question.answer).map((question) => question.tag);
     setMistakes(Array.from(new Set([...mistakes, ...nextMistakes])));
     setExamResults({ ...examResults, [examLevel]: Math.max(examResults[examLevel] ?? 0, examScore) });
@@ -480,7 +470,7 @@ export default function LearningWorkspace() {
         {view === "mistakes" && (
           <section className="page-section">
             <div className="page-intro"><span className="eyebrow">REVIEW BOOK · ERROR RADAR</span><h1>错题本与误判雷达</h1><p>错题按能力主题聚合；下方12类高风险误判用于在真实解读前做主动检查。</p></div>
-            {mistakes.length ? <div className="mistake-list">{mistakes.map((item, index) => <article key={item}><span>{String(index + 1).padStart(2,"0")}</span><div><h2>{item}</h2><p>回到对应课程，复习该证据或病例判断的适用条件、反证与报告边界。</p></div><button onClick={() => navigate(item.includes("证据") || item.includes("PM") || item.includes("PS") || item.includes("PVS") ? "rules" : "courses")}>开始复习 →</button></article>)}</div> : <div className="empty-state"><span>✓</span><h2>目前没有测验错题</h2><p>完成任一分层测验后，错误主题会自动汇总到这里。</p><button className="primary" onClick={() => navigate("exam")}>开始测验</button></div>}
+            <ReviewCenter onReport={() => navigate("report")} onExam={() => navigate("exam")} />
             <section className="error-radar"><div className="section-heading"><div><span>PRE-FLIGHT CHECK</span><h2>12类常见误判</h2></div><p>每张卡包含错误模式、为什么危险和纠正动作。</p></div><div>{errorPatterns.map(([title,risk,fix], index) => <article key={title}><span>{String(index+1).padStart(2,"0")}</span><h3>{title}</h3><p>{risk}</p><b>纠正：{fix}</b></article>)}</div></section>
           </section>
         )}
@@ -663,13 +653,13 @@ export default function LearningWorkspace() {
           <section className="page-section roadmap">
             <div className="page-intro"><span className="eyebrow">COMPETENCY MAP · LOCAL CERTIFICATION</span><h1>独立解读能力地图</h1><p>等级由课程、专项练习、病例、报告与考试共同计算；只表示站内训练水平，不等同于职业资格或临床授权。</p></div>
             <div className="competency-summary"><div><span>课程</span><b>{lessonDone.length}/24</b></div><div><span>证据专项</span><b>{drillCorrectCount}/6</b></div><div><span>八例得分</span><b>{scoredCases.join(" · ")}</b></div><div><span>报告最高分</span><b>{reportBestScore}</b></div></div>
-            <div className="level-list"><article className={certification.L1 ? "unlocked" : ""}><span>L1</span><div><h2>基础识别</h2><p>完成≥6课，L1测验≥80。当前：{lessonDone.length}/6课，测验{examResults.L1 ?? 0}/80。</p></div><b>{certification.L1 ? "已获得" : "未满足"}</b></article><article className={certification.L2 ? "unlocked" : ""}><span>L2</span><div><h2>证据评估</h2><p>完成≥16课、L2≥80、专项≥5/6，八个病例均≥70。当前：{lessonDone.length}/16 · {examResults.L2 ?? 0}/80 · {drillCorrectCount}/5。</p></div><b>{certification.L2 ? "已获得" : "未满足"}</b></article><article className={certification.L3 ? "unlocked" : ""}><span>L3</span><div><h2>病例与报告整合</h2><p>完成24课、L3≥80、报告≥80，八个病例均≥85。当前：{lessonDone.length}/24 · {examResults.L3 ?? 0}/80 · 报告{reportBestScore}/80。</p></div><b>{certification.L3 ? "已获得" : "未满足"}</b></article></div>
+            <div className="level-list"><article className={certification.L1 ? "unlocked" : ""}><span>L1</span><div><h2>基础识别</h2><p>完成≥6课，L1测验≥80。当前：{lessonDone.length}/6课，测验{examResults.L1 ?? 0}/80。</p></div><b>{certification.L1 ? "已获得" : "未满足"}</b></article><article className={certification.L2 ? "unlocked" : ""}><span>L2</span><div><h2>证据评估</h2><p>完成≥16课、L2≥80、专项≥5/6，八个病例均≥70。当前：{lessonDone.length}/16 · {examResults.L2 ?? 0}/80 · {drillCorrectCount}/5。</p></div><b>{certification.L2 ? "已获得" : "未满足"}</b></article><article className={certification.L3 ? "unlocked" : ""}><span>L3</span><div><h2>病例与报告整合</h2><p>完成24课、L1–L3各≥80、证据专项至少5题正确、报告≥80，八个病例均≥85。当前：{lessonDone.length}/24 · {examResults.L3 ?? 0}/80 · 报告{reportBestScore}/80。</p></div><b>{certification.L3 ? "已获得" : "未满足"}</b></article></div>
             {certification.L3 && <div className="certificate-card"><span>VARIANT ATLAS · INTERNAL LEARNING RECORD</span><h2>L3 病例与报告整合</h2><p>已达到本站当前课程、证据专项、病例与报告训练要求。该记录保存在本机，不代表职业资质。</p><button className="primary" onClick={() => window.print()}>打印学习记录</button></div>}
             <div className="warning-panel"><b>高风险错误</b><p>把VUS作为确诊依据 · 复制数据库结论而不核查 · 使用错误转录本 · 同一证据重复计分 · 忽略反证 · 阴性结果声称排除遗传病</p></div>
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.3 深度病例版</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.4 学习闭环版</span></footer>
     </div>
   );
 }
@@ -681,16 +671,9 @@ function LdlrCase({ onBack, onScore }: { onBack: () => void; onScore: (value: nu
   const [checked, setChecked] = useState(false);
   const [answer, setAnswer] = useState<LdlrAnswer>({ inheritance:"", pvs1:"", evidence:[], classification:"", conflict:"", report:"" });
 
-  useEffect(() => {
-    const saved=window.localStorage.getItem("variant-atlas-case003");
-    if (saved) try {
-      const state=JSON.parse(saved);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the local case draft once
-      setAnswer(state.answer ?? { inheritance:"", pvs1:"", evidence:[], classification:"", conflict:"", report:"" });
-      setStep(Math.max(0,Math.min(6,Number(state.step) || 0)));
-    } catch { /* ignore damaged local draft */ }
-  }, []);
-  useEffect(() => { window.localStorage.setItem("variant-atlas-case003",JSON.stringify({answer,step})); },[answer,step]);
+  useProgressPersistence("variant-atlas-case003", {answer,step}, (state) => {
+    setAnswer(state.answer); setStep(state.step);
+  });
 
   const reportChecks = [answer.report.includes("LDLR"),answer.report.includes("c.313+1"),answer.report.includes("杂合"),answer.report.includes("致病"),answer.report.includes("家系") || answer.report.includes("遗传咨询")];
   const score = Math.min(100,(answer.inheritance === "AD" ? 10 : 0)+(answer.pvs1 === "PVS1_Strong" ? 15 : 0)+evidence.filter(code => answer.evidence.includes(code)).length*5+(answer.classification === "Pathogenic" ? 15 : 0)+(answer.conflict === "expert" ? 10 : 0)+reportChecks.filter(Boolean).length*4);
@@ -714,16 +697,9 @@ function NegativeCase({ onBack, onScore }: { onBack: () => void; onScore: (value
   const [step,setStep]=useState(0);
   const [checked,setChecked]=useState(false);
   const [answer,setAnswer]=useState<NegativeAnswer>({interpretation:"",nextTest:"",differential:[],report:"",reanalysis:""});
-  useEffect(() => {
-    const saved=window.localStorage.getItem("variant-atlas-case004");
-    if (saved) try {
-      const state=JSON.parse(saved);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate the local case draft once
-      setAnswer(state.answer ?? {interpretation:"",nextTest:"",differential:[],report:"",reanalysis:""});
-      setStep(Math.max(0,Math.min(6,Number(state.step) || 0)));
-    } catch { /* ignore damaged draft */ }
-  },[]);
-  useEffect(() => { window.localStorage.setItem("variant-atlas-case004",JSON.stringify({answer,step})); },[answer,step]);
+  useProgressPersistence("variant-atlas-case004", {answer,step}, (state) => {
+    setAnswer(state.answer); setStep(state.step);
+  });
   const toggle=(item:string) => setAnswer({...answer,differential:answer.differential.includes(item) ? answer.differential.filter(value => value !== item) : [...answer.differential,item]});
   const reportChecks=[answer.report.includes("PAH"),answer.report.includes("c.1222"),answer.report.includes("杂合"),answer.report.includes("不足") || answer.report.includes("不能"),answer.report.includes("限制") || answer.report.includes("缺失")];
   const score=(answer.interpretation === "unresolved" ? 20 : 0)+(answer.nextTest === "deldup" ? 20 : 0)+["BH4","panel"].filter(item => answer.differential.includes(item)).length*10+reportChecks.filter(Boolean).length*6+(answer.reanalysis === "targeted" ? 10 : 0);
@@ -746,16 +722,9 @@ function BoundaryCase({ definition, onBack, onScore }: { definition: BoundaryCas
   const [answer,setAnswer]=useState<{choices:Record<string,string>;report:string}>({choices:{},report:""});
   const storageKey=`variant-atlas-case${definition.id}`;
 
-  useEffect(() => {
-    const saved=window.localStorage.getItem(storageKey);
-    if (saved) try {
-      const state=JSON.parse(saved);
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate this case draft when the selected case changes
-      setAnswer(state.answer ?? {choices:{},report:""});
-      setStep(Math.max(0,Math.min(6,Number(state.step) || 0)));
-    } catch { /* ignore damaged local draft */ }
-  },[storageKey]);
-  useEffect(() => { window.localStorage.setItem(storageKey,JSON.stringify({answer,step})); },[answer,step,storageKey]);
+  useProgressPersistence(storageKey, {answer,step}, (state) => {
+    setAnswer(state.answer); setStep(state.step);
+  });
 
   const activeStep=definition.steps[step];
   const reportChecks=definition.reportChecks.map(([label,keywords]) => ({label,met:keywords.some(keyword => answer.report.includes(keyword))}));

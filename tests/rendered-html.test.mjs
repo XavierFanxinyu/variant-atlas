@@ -70,7 +70,7 @@ test("includes the SOP-derived auditable workflow without internal document-cont
 
 test("provides structured singleton and family report training", async () => {
   const source = await readFile(new URL("../app/learning-workspace.tsx", import.meta.url), "utf8");
-  const reportLab = await readFile(new URL("../app/report-lab.tsx", import.meta.url), "utf8");
+  const reportLab = await readFile(new URL("../app/report-lab.tsx", import.meta.url), "utf8") + await readFile(new URL("../app/report-audit.ts", import.meta.url), "utf8");
   const reportData = await readFile(new URL("../app/report-lab-data.ts", import.meta.url), "utf8");
 
   assert.match(source, /<ReportLab bestScore=/);
@@ -87,7 +87,7 @@ test("provides structured singleton and family report training", async () => {
   assert.match(reportData, /mode: "singleton"/);
   assert.match(source, /saveCaseScore\("001",score\)/);
   assert.match(source, /saveCaseScore\("002",pahScore\)/);
-  assert.equal(source.match(/JSON\.stringify\(\{answer,step\}\)/g)?.length, 3);
+  assert.equal(source.match(/useProgressPersistence\(/g)?.length, 4);
 });
 
 test("provides the complete WGS specialty track", async () => {
@@ -127,7 +127,7 @@ test("provides a versioned local learning archive with safe import and reset", a
   const record = await readFile(new URL("../app/learning-record.ts", import.meta.url), "utf8");
   const center = await readFile(new URL("../app/learning-record-center.tsx", import.meta.url), "utf8");
 
-  for (const symbol of ["LEARNING_RECORD_SCHEMA = 3", "ensureLearningSchema", "exportLearningArchive", "validateLearningArchive", "importLearningArchive", "resetLearningArchive", "summarizeLearning"]) {
+  for (const symbol of ["LEARNING_RECORD_SCHEMA = 4", "ensureLearningSchema", "exportLearningArchive", "validateLearningArchive", "importLearningArchive", "resetLearningArchive", "summarizeLearning"]) {
     assert.match(record, new RegExp(symbol));
   }
   assert.match(record, /startsWith\("variant-atlas-"\)/);
