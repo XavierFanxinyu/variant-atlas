@@ -1029,6 +1029,37 @@ footer p, footer span:last-child { text-align: left; margin: 0; }
 .flagship-stages summary { color: #28604e; font-weight: 800; cursor: pointer; }
 .flagship-stages details p { color: #52635c; line-height: 1.7; }
 .flagship-next { margin: 26px 34px; }
+.review-toolbar, .review-actions { display: flex; flex-wrap: wrap; gap: 16px; align-items: center; margin: 20px 0; }
+.review-toolbar label { display: flex; gap: 10px; align-items: center; font-size: 14px; }
+.review-toolbar select { padding: 10px; border: 1px solid #acbeb2; background: white; }
+.review-card { margin: 20px 0; padding: 28px; border: 1px solid #c1cfc5; background: white; }
+.review-card header { display: flex; justify-content: space-between; gap: 12px; color: #41614f; font-size: 14px; }
+.review-card h2 { font-size: 20px; }
+.review-card p, .report-check-details p { font-size: 16px; line-height: 1.8; overflow-wrap: anywhere; }
+.review-options { display: grid; gap: 10px; }
+.review-options button { padding: 14px; background: #fafbf8; border: 1px solid #b8c8be; text-align: left; font-size: 16px; cursor: pointer; }
+.review-options button.selected { border-color: #30684e; background: #e6f0e9; }
+.review-feedback { margin-top: 18px; padding: 16px; border-left: 3px solid #a57a38; background: #fcf6e8; }
+.report-check-details { margin-top: 20px; padding: 20px; background: #f4f7f2; border: 1px solid #bacabd; }
+.report-check-details summary { cursor: pointer; font-size: 16px; font-weight: 600; }
+.report-check-details section { padding: 12px 0; border-top: 1px solid #d4ddd5; }
+.report-check-details h3 { font-size: 15px; }
+.storage-notice { position: sticky; top: 0; z-index: 100; display: flex; align-items: center; gap: 24px; padding: 16px 28px; color: #4c3a1c; background: #fff0ca; border-bottom: 1px solid #c4ad77; font-size: 16px; }
+.storage-notice button { margin-left: auto; padding: 8px 14px; border: 1px solid #ad9769; background: transparent; cursor: pointer; }
+.stage-note { display: block; margin: 18px 0 10px; color: #234c3e; font-size: 14px; font-weight: 600; }
+.stage-note textarea { display: block; width: 100%; margin-top: 10px; padding: 14px; border: 1px solid #adbeb4; border-radius: 4px; background: #fffefb; color: #263e34; font: 400 16px/1.75 inherit; font-family: inherit; font-size: 16px; line-height: 1.75; resize: vertical; box-sizing: border-box; }
+.stage-note textarea:focus { outline: 2px solid #36745b; outline-offset: 2px; }
+.stage-task, .stage-reference p { font-size: 16px; line-height: 1.8; }
+.stage-reference { margin: 20px 0; padding: 20px; background: #edf4ef; border-left: 3px solid #45745c; }
+.stage-note + small { display: block; margin-bottom: 16px; color: #626b65; font-size: 13px; }
+.archive-confirm, .wgs-empty { margin: 24px 0; padding: 26px; border: 1px solid #c4ad77; background: #fff8e7; font-size: 16px; line-height: 1.8; }
+.archive-confirm > div { display: flex; flex-wrap: wrap; gap: 12px; }
+.deep-lesson-panel p, .deep-lesson-panel li, .flagship-case p, .flagship-case li, .record-center p { font-size: 16px; line-height: 1.8; }
+.deep-lesson-panel small, .flagship-provenance small, .flagship-layout > aside span, .flagship-layout > aside small { font-size: 13px; line-height: 1.7; }
+.deep-pitfalls span, .flagship-sources a, .flagship-sources b { font-size: 14px; }
+.deep-example summary { color: #285846; cursor: pointer; font-size: 16px; }
+.flagship-sources p { width: 100%; margin: 0 0 12px; }
+.flagship-case button:disabled { opacity: .55; cursor: not-allowed; }
 .flagship-quiz { margin: 30px 34px; padding: 25px; border: 1px solid #cdbd91; background: #fff8e6; }
 .flagship-quiz > span { color: #a66d2d; font-size: 9px; font-weight: 900; letter-spacing: .14em; }
 .flagship-quiz section { margin-top: 22px; }

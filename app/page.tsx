@@ -1,5 +1,5 @@
-import LearningWorkspace from "./learning-workspace";
+import LearningApp from "./learning-app";
 
 export default function Home() {
-  return <LearningWorkspace />;
+  return <LearningApp />;
 }
