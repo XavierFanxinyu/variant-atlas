@@ -1,6 +1,6 @@
 {
   "name": "variant-atlas-learning",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "private": true,
   "license": "Apache-2.0",
   "engines": {
@@ -11,7 +11,7 @@
     "build": "vinext build",
     "start": "vinext start",
     "test": "npm run typecheck && npm run build && node --test tests/*.test.mjs",
-    "test:unit": "node --test tests/learning-progress.test.mjs tests/review.test.mjs tests/evidence-strength.test.mjs",
+    "test:unit": "node --test tests/learning-progress.test.mjs tests/review.test.mjs tests/evidence-strength.test.mjs tests/evidence-labs.test.mjs",
     "typecheck": "tsc -p tsconfig.learning.json",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next --ignore-pattern build --ignore-pattern outputs --ignore-pattern work",
     "db:generate": "drizzle-kit generate"

@@ -1,5 +1,37 @@
 @import "tailwindcss";
 
+/* Evidence labs extend the existing calm, source-first learning workspace. */
+.evidence-labs { margin: 2rem 0; min-width: 0; }
+.evidence-labs { scroll-margin-top: 6rem; }
+.evidence-labs h2 { font-size: 1.5rem; font-weight: 600; line-height: 1.6; margin: .75rem 0; }
+.lab-tabs { display: flex; flex-wrap: wrap; gap: .6rem; margin: 1.2rem 0; }
+.lab-tabs button { border: 1px solid var(--green); border-radius: 7px; background: var(--panel); padding: .8rem 1rem; color: var(--green); font-size: 1rem; line-height: 1.5; text-align: left; cursor: pointer; }
+.lab-tabs button.active { background: var(--green); color: #fff; }
+.lab-tabs button:focus-visible, .pvs1-path input:focus-visible, .packet-lab :is(input,select,textarea,button):focus-visible { outline: 3px solid var(--green); outline-offset: 3px; }
+.pvs1-path { border-left: 3px solid var(--green); padding-left: clamp(.65rem, 2vw, 1.5rem); margin-top: 1.5rem; }
+.pvs1-path fieldset, .packet-decision { min-width: 0; border: 1px solid var(--line); border-radius: 8px; padding: clamp(1rem, 2vw, 1.5rem); margin: 1.5rem 0; }
+.pvs1-path legend, .packet-decision legend { font-size: 1.1rem; line-height: 1.6; padding: 0 .5rem; font-weight: 700; }
+.tree-choices { display: flex; flex-wrap: wrap; gap: .7rem; margin: 1rem 0; }
+.tree-choices label { display: flex; align-items: flex-start; gap: .65rem; background: #f1f4ed; padding: .8rem; border-radius: 6px; font-size: 1rem; line-height: 1.6; cursor: pointer; }
+.tree-choices input { flex-shrink: 0; width: 1.1rem; height: 1.1rem; margin-top: .25rem; }
+.tree-choices label:has(input:checked) { box-shadow: inset 0 0 0 2px var(--green); }
+.lab-trace { font-size: 1rem; line-height: 1.85; margin: 1.5rem 0; }
+.lab-trace summary { cursor: pointer; font-weight: 700; }
+.lab-trace ol, .packet-facts ul { padding-left: 1.5rem; list-style: revert; }
+.strength-calculator .stage-note textarea { width: 100%; font-size: 1rem; }
+.packet-lab { margin-top: 1.5rem; }
+.packet-body { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: clamp(1rem, 3vw, 2rem); }
+.packet-body h3 { font-size: 1.5rem; margin: 1rem 0; line-height: 1.6; }
+.packet-body h4 { font-size: 1.1rem; margin: 1.25rem 0 .75rem; line-height: 1.7; }
+.packet-body a { text-decoration: underline; text-underline-offset: 3px; }
+.packet-body blockquote { border-left: 3px solid var(--orange); margin: 1rem 0; padding: 1rem; background: #fbf0e4; font-size: 1rem; line-height: 1.85; overflow-wrap: anywhere; }
+.packet-facts { border-left: 4px solid var(--green); padding: 1rem 1.5rem; background: #eef2e9; margin: 1.5rem 0; }
+.packet-facts li { line-height: 1.85; font-size: 1rem; margin: .65rem 0; }
+.packet-decision > label { display: flex; flex-direction: column; gap: .5rem; font-size: 1rem; line-height: 1.7; }
+.packet-decision :is(select,textarea) { min-width: 0; width: 100%; padding: .75rem; font: inherit; border: 1px solid #adb6ad; border-radius: 5px; background: #fff; }
+.packet-decision button { margin-top: .8rem; }
+@media (max-width: 650px) { .lab-tabs button { flex: 1 1 45%; } .tree-choices { flex-direction: column; } }
+
 /* Evidence review extension: retain the existing editorial learning theme. */
 .automation-page { max-width: 1380px; margin: auto; padding: 3rem max(1.25rem, 4vw); }
 .automation-hero { padding: 2rem 0; max-width: 960px; }
