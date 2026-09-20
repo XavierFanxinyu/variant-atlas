@@ -4,6 +4,8 @@ import { reportScenarios, reportSectionIds } from "./report-lab-data";
 import { sopWorkflowSteps, wesCaseWorkflowSteps, wgsCaseWorkflowSteps } from "./sop-workflow";
 import { wgsCases, wgsModules, wgsExamBanks } from "./wgs-content";
 import { automationExercises } from "./automation-review-data";
+import { evidencePackets, packetItemIds } from "./evidence-packets-data";
+import { pvs1Questions } from "./pvs1-model";
 
 export const coreLessonIds = ["phenotype", "quality", "hgvs", "acmg", "case-level", "report", ...supplementalLessons.map(item => item.id)];
 export const coreCaseIds = Array.from({ length: 8 }, (_, index) => String(index + 1).padStart(3, "0"));
@@ -43,7 +45,18 @@ const quizMap = (sets: Array<{ id: string; questions: Array<{ options: string[] 
 const wgsCaseIds = wgsCases.map(item => item.id);
 const flagshipIds = flagshipCases.map(item => item.id);
 const drillIds = evidenceDrills.map(item => item.id);
+const packetDecisions = (submitted: boolean): Parser => value => Object.fromEntries(Object.entries(object(value)).map(([id, item]) => {
+  if (!packetItemIds.includes(id)) fail();
+  const definition = evidencePackets.flatMap(packet => packet.items).find(row => row.id === id)!;
+  const record = object(item);
+  if (submitted && (typeof record.action !== "number" || typeof record.note !== "string" || record.note.trim().length < 20 || typeof record.strength !== "string")) fail();
+  return [id, shape({ action: integer(3, submitted ? 0 : -1), strength: choice([...(submitted ? [] : [""]), ...definition.strengths]), note: str })(record)];
+}));
 const schemas: Record<string, Parser> = {
+  "variant-atlas-denovo-v1": shape({ scope: bool, rows: list(shape({ family: str, source: str, parentage: choice(["unknown", "confirmed", "assumed"]), parentsNegative: bool, phenotype: choice(["inconsistent", "specific", "consistent", "heterogeneous"]), verified: bool, special: bool }), 30) }),
+  "variant-atlas-segregation-v1": shape({ scope: bool, mode: choice(["AD", "AR", "XLR"]), yieldPercent: str, yieldSource: str, yieldVerified: bool, homogeneous: bool, fullyPenetrant: bool, complex: bool, variants: value => value === undefined ? "1" : str(value), rows: list(shape({ person: str, source: str, affected: bool, verified: bool }), 30) }),
+  "variant-atlas-pvs1-v1": shape({ record: str, answers: value => Object.fromEntries(Object.entries(object(value)).map(([id, answer]) => { const question = pvs1Questions.find(item => item.id === id); if (!question) fail(); return [id, choice(question!.options.map(option => option[0]))(answer)]; })) }),
+  "variant-atlas-packets-v1": shape({ activeId: choice(evidencePackets.map(item => item.id)), revealed: ids(evidencePackets.map(item => item.id)), drafts: packetDecisions(false), submitted: packetDecisions(true) }),
   "variant-atlas-pm3-v1": shape({ scopeConfirmed: bool, observations: list(shape({ family: str, source: str, otherVariant: str, kind: choice(["heterozygous", "homozygous"]), phase: choice(["unknown", "trans", "cis"]), classification: choice(["VUS", "LP", "P", "B/LB"]), verified: bool }), 30) }),
   "variant-atlas-automation-v1": shape({ activeId: choice(automationExercises.map(item => item.id)), revealed: ids(automationExercises.map(item => item.id)), answers: map(integer(3), automationExercises.map(item => item.id)), notes: map(str, automationExercises.map(item => item.id)), submitted: map(integer(3), automationExercises.map(item => item.id)) }),
   "variant-atlas-demo": shape({
