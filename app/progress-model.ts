@@ -3,6 +3,7 @@ import { flagshipCases } from "./flagship-cases";
 import { reportScenarios, reportSectionIds } from "./report-lab-data";
 import { sopWorkflowSteps, wesCaseWorkflowSteps, wgsCaseWorkflowSteps } from "./sop-workflow";
 import { wgsCases, wgsModules, wgsExamBanks } from "./wgs-content";
+import { automationExercises } from "./automation-review-data";
 
 export const coreLessonIds = ["phenotype", "quality", "hgvs", "acmg", "case-level", "report", ...supplementalLessons.map(item => item.id)];
 export const coreCaseIds = Array.from({ length: 8 }, (_, index) => String(index + 1).padStart(3, "0"));
@@ -43,6 +44,8 @@ const wgsCaseIds = wgsCases.map(item => item.id);
 const flagshipIds = flagshipCases.map(item => item.id);
 const drillIds = evidenceDrills.map(item => item.id);
 const schemas: Record<string, Parser> = {
+  "variant-atlas-pm3-v1": shape({ scopeConfirmed: bool, observations: list(shape({ family: str, source: str, otherVariant: str, kind: choice(["heterozygous", "homozygous"]), phase: choice(["unknown", "trans", "cis"]), classification: choice(["VUS", "LP", "P", "B/LB"]), verified: bool }), 30) }),
+  "variant-atlas-automation-v1": shape({ activeId: choice(automationExercises.map(item => item.id)), revealed: ids(automationExercises.map(item => item.id)), answers: map(integer(3), automationExercises.map(item => item.id)), notes: map(str, automationExercises.map(item => item.id)), submitted: map(integer(3), automationExercises.map(item => item.id)) }),
   "variant-atlas-demo": shape({
     step: integer(6), answer: coreAnswer, activeCaseId: choice(coreCaseIds), pahStep: integer(6),
     pahAnswer: shape(stringFields(["inheritance", "phase", "variant1Class", "variant2Class", "rationale1", "rationale2", "conclusion", "report"])),

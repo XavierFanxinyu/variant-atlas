@@ -45,7 +45,7 @@ test("import replaces old modules, round trips notes and leaves unrelated storag
   assert.equal(storage.getItem("variant-atlas-case003"), null);
   assert.equal(storage.getItem("unrelated"), "keep");
   const exported = record.exportLearningArchive(storage);
-  assert.equal(exported.schemaVersion, 4);
+  assert.equal(exported.schemaVersion, 5);
   assert.equal(exported.records["variant-atlas-flagship-v1"].notes["F-WGS-01"][0], "我的分析");
   assert.equal(Object.hasOwn(exported.records, record.GENERATION_KEY), false);
 });
