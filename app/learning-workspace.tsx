@@ -6,12 +6,15 @@ import DeepLessonPanel from "./deep-lesson-panel";
 import GuidelineCenter from "./guideline-center";
 import LearningRecordCenter from "./learning-record-center";
 import ReviewCenter from "./review-center";
+import AutomationReview from "./automation-review";
+import EvidenceStrengthPanel, { PM3Calculator } from "./evidence-strength-panel";
+import { classifyTraditional, workbenchStrength } from "./evidence-combination";
 import { useProgressPersistence } from "./use-progress-persistence";
 import ReportLab from "./report-lab";
 import WgsTrack from "./wgs-track";
 import { cnvClassification, cnvWorkflow, evidenceRecordFields, hierarchyTiers, sequenceAuditCards, sopWorkflowSteps, thresholdRegistry, wesCaseWorkflowSteps, wgsCaseWorkflowSteps } from "./sop-workflow";
 
-type View = "dashboard" | "case" | "rules" | "sop" | "wgs" | "roadmap" | "record" | "guidelines" | "courses" | "library" | "exam" | "report" | "mistakes";
+type View = "dashboard" | "case" | "rules" | "automation" | "sop" | "wgs" | "roadmap" | "record" | "guidelines" | "courses" | "library" | "exam" | "report" | "mistakes";
 type CaseAnswer = { inheritance: string; evidence: string[]; classification: string; report: string };
 type PahAnswer = {
   inheritance: string;
@@ -143,7 +146,7 @@ const evidenceRules: EvidenceRule[] = [
   { code:"PVS1", title:"预测功能缺失", direction:"致病", strength:"极强/可降级", domain:"机制", original:"无义、移码、±1/2剪接、起始丢失或外显子缺失，且功能缺失是明确致病机制。", current:"使用ClinGen PVS1决策树；核查LOF机制、疾病相关转录本、NMD、关键区域及逃逸NMD后的蛋白影响。", pitfalls:"末端截短、非疾病相关转录本、LOF非致病机制；剪接证据须避免与PP3/PS1重复。", status:"ClinGen细化", source:"ClinGen PVS1 + Splicing" },
   { code:"PS1", title:"相同氨基酸改变", direction:"致病", strength:"强/可调整", domain:"蛋白/剪接", original:"与已明确致病变异导致相同氨基酸改变，但核苷酸变化不同。", current:"必须核查既有变异确属致病、疾病机制一致，并分别评估两个核苷酸改变的剪接影响。", pitfalls:"仅凭相同蛋白注释；忽视新变异或参照变异的剪接效应。", status:"ClinGen细化", source:"ClinGen Splicing" },
   { code:"PS2", title:"确认亲缘的新生变异", direction:"致病", strength:"支持至极强", domain:"家系", original:"患者中为新生变异，父母双方亲缘关系确认，且无家族史。", current:"ClinGen按亲缘确认、表型一致性和疾病遗传异质性计点；多例可累加并调整强度。", pitfalls:"把单例自动当强证据；只确认父亲；未排除父母嵌合、样本问题或病例重复。", status:"ClinGen细化", source:"ClinGen PS2/PM6 v1.1" },
-  { code:"PS3", title:"有害功能实验", direction:"致病", strength:"支持至强", domain:"功能", original:"完善的体外或体内功能研究支持对基因或基因产物有害。", current:"按实验系统、对照、验证、动态范围和疾病机制匹配程度评定强度。", pitfalls:"论文写“显著”就使用；实验只测一般分子差异；同一实验重复支持多个代码。", status:"ClinGen细化", source:"ClinGen PS3/BS3" },
+  { code:"PS3", title:"有害功能实验", direction:"致病", strength:"校准后支持至极强", domain:"功能", original:"完善的体外或体内功能研究支持对基因或基因产物有害。", current:"按实验系统、对照、验证、动态范围和疾病机制匹配程度评定强度。", pitfalls:"论文写“显著”就使用；实验只测一般分子差异；同一实验重复支持多个代码。", status:"ClinGen细化", source:"ClinGen PS3/BS3" },
   { code:"PS4", title:"病例富集", direction:"致病", strength:"支持至强", domain:"病例/统计", original:"受累者中的变异患病率显著高于对照。", current:"优先使用设计良好的病例对照数据；极罕见病可按独立先证者数量由VCEP设定阈值。", pitfalls:"重复患者、选择偏倚、对照祖源不匹配、把ClinVar提交数当独立病例。", status:"原始框架", source:"ACMG/AMP 2015 + VCEP阈值" },
   { code:"PM1", title:"热点或关键功能域", direction:"致病", strength:"中等/可调整", domain:"位置", original:"位于突变热点或明确关键功能域，且该区域无良性变异。", current:"需要基因/疾病特异证据定义区域；不能仅凭蛋白结构域名称或预测软件图。", pitfalls:"区域定义过宽；忽略同一区域大量良性错义变异。", status:"原始框架", source:"ACMG/AMP 2015 + VCEP规范" },
   { code:"PM2", title:"人群中缺失或极低频", direction:"致病", strength:"支持", domain:"人群", original:"在大规模人群数据库中缺失，或隐性病中低于预期携带频率。", current:"ClinGen通用建议降为支持级；检查覆盖、祖源、数据质量、疾病频率、外显率和遗传异质性。", pitfalls:"把缺失当强证据；未查看位点覆盖；忽略创始人效应和祖源差异。", status:"ClinGen细化", source:"ClinGen PM2 v1.0" },
@@ -352,6 +355,7 @@ export default function LearningWorkspace() {
           <button className={view === "dashboard" ? "active" : ""} onClick={() => navigate("dashboard")}>学习台</button>
           <button className={view === "courses" ? "active" : ""} onClick={() => navigate("courses")}>课程</button>
           <button className={view === "rules" ? "active" : ""} onClick={() => navigate("rules")}>证据规则</button>
+          <button className={view === "automation" ? "active" : ""} onClick={() => navigate("automation")}>人工审核</button>
           <button className={view === "sop" ? "active" : ""} onClick={() => navigate("sop")}>SOP工作流</button>
           <button className={view === "guidelines" ? "active" : ""} onClick={() => navigate("guidelines")}>规范更新</button>
           <button className={view === "wgs" ? "active" : ""} onClick={() => navigate("wgs")}>WGS专项</button>
@@ -475,6 +479,8 @@ export default function LearningWorkspace() {
           </section>
         )}
 
+        {view === "automation" && <AutomationReview onEvidence={code => { setSelectedRule(code); setRuleSearch(""); setRuleDirection("全部"); setRuleDomain("全部"); navigate("rules"); }} onReview={() => navigate("mistakes")} />}
+
         {view === "rules" && (
           <section className="evidence-page">
             <div className="evidence-hero"><div><span className="eyebrow">EVIDENCE HANDBOOK · 28 CRITERIA</span><h1>证据规则工作手册</h1><p>左侧保留2015年ACMG/AMP原始框架，右侧标注ClinGen现行通用细化。真正解读时，适用的基因/疾病VCEP规范优先于这里的通用提示。</p></div><div className="evidence-counts"><span><b>16</b>致病证据</span><span><b>12</b>良性证据</span><span><b>11</b>ClinGen通用细化主题</span></div></div>
@@ -492,12 +498,15 @@ export default function LearningWorkspace() {
                 <section><span>2015 原始框架</span><p>{activeRule.original}</p></section>
                 <section className="current-guidance"><span>当前通用使用提示</span><p>{activeRule.current}</p></section>
                 <section className="pitfall-guidance"><span>高风险误用</span><p>{activeRule.pitfalls}</p></section>
-                <div className="detail-source"><span>主要依据</span><b>{activeRule.source}</b><small>证据快照：2026-08-14</small></div>
+                <EvidenceStrengthPanel code={activeRule.code} />
+                <div className="detail-source"><span>主要依据</span><b>{activeRule.source}</b><small>基础摘要保留；升降级细则核查：2026-09-20</small></div>
                 <div className="detail-actions"><button className="secondary" onClick={() => navigate("case")}>在病例中练习</button><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">打开ClinGen现行汇总 ↗</a></div>
               </article> : <article className="rule-detail rule-empty"><span>未找到匹配规则</span><h1>换一个关键词或筛选条件</h1><p>可以检索代码（如PVS1）、证据名称、适用条件或高风险误用。</p><button className="secondary" onClick={() => {setRuleSearch("");setRuleDirection("全部");setRuleDomain("全部")}}>清除筛选</button></article>}
             </div>
+            <div className="strength-entry"><h2>从自动命中到人工确认</h2><p>28条规则均有强度调整路径；没有通用阈值的条目明确转向适用VCEP。病例观察分不等于贝叶斯分类分。下方PM3实验室独立计算，不修改2015组合台。</p><button className="secondary" onClick={() => navigate("automation")}>练习自动化结果人工审核</button></div>
+            <PM3Calculator />
             <section className="combination-panel"><div><span className="eyebrow">COMBINATION RULES</span><h2>五级分类组合速查</h2><p>这是ACMG/AMP 2015表5的压缩提示。采用强度调整、VCEP规范或贝叶斯/计分化框架时，应使用对应规范的完整组合方法。</p></div><div>{combinationRows.map(([label, body]) => <article key={label}><b>{label}</b><p>{body}</p></article>)}</div></section>
-            <section className="evidence-workbench"><div className="workbench-intro"><span className="eyebrow">COMBINATION PRACTICE</span><h2>证据组合练习台</h2><p>点击加入证据，观察ACMG/AMP表5组合结果。练习台采用代码原始强度，但按ClinGen通用建议将PM2作为支持级；暂不模拟其他代码的升降级。实际工作以适用VCEP的强度与组合规则为准。</p><div className={`workbench-result ${workbenchResult.tone}`}><span>当前结果</span><strong>{workbenchResult.label}</strong><p>{workbenchResult.reason}</p></div><button onClick={() => setWorkbench([])}>清空组合</button></div><div className="workbench-codes">{evidenceRules.map(rule => <button className={`${workbench.includes(rule.code) ? "selected" : ""} ${rule.direction === "致病" ? "pathogenic" : "benign"}`} disabled={rule.status === "不建议使用"} onClick={() => setWorkbench(workbench.includes(rule.code) ? workbench.filter(code => code !== rule.code) : [...workbench, rule.code])} key={rule.code}><b>{rule.code}</b><span>{rule.code === "PM2" ? "支持（ClinGen通用）" : rule.strength}</span></button>)}</div></section>
+            <section className="evidence-workbench"><div className="workbench-intro"><span className="eyebrow">COMBINATION PRACTICE</span><h2>证据组合练习台</h2><p>本台采用2015表5，加上ClinGen PM2 v1.0的支持级及“极强＋支持→可能致病”扩展。按钮显示本台实际采用的强度，不随上方细则自动升降级。仍需独立审核每条证据的适用性和依赖，不能把计算结果直接用于真实报告。</p><div className={`workbench-result ${workbenchResult.tone}`}><span>当前结果</span><strong>{workbenchResult.label}</strong><p>{workbenchResult.reason}</p></div><button onClick={() => setWorkbench([])}>清空组合</button></div><div className="workbench-codes">{evidenceRules.map(rule => <button className={`${workbench.includes(rule.code) ? "selected" : ""} ${rule.direction === "致病" ? "pathogenic" : "benign"}`} disabled={rule.status === "不建议使用"} onClick={() => setWorkbench(workbench.includes(rule.code) ? workbench.filter(code => code !== rule.code) : [...workbench, rule.code])} key={rule.code}><b>{rule.code}</b><span>{workbenchStrength(rule.code)}</span></button>)}</div></section>
             <section className="evidence-drills"><div className="drill-index"><span className="eyebrow">EVIDENCE ASSIGNMENT · {drillCorrectCount}/{evidenceDrills.length}</span><h2>证据赋分专项</h2><p>不仅选代码，还必须写至少20字理由。完成后才揭示答案与高风险误区。</p>{evidenceDrills.map((drill,index) => <button className={`${drillIndex === index ? "active" : ""} ${drillCompleted.includes(drill.id) ? "done" : ""}`} onClick={() => setDrillIndex(index)} key={drill.id}><span>{drillCompleted.includes(drill.id) ? "✓" : index+1}</span>{drill.title}</button>)}</div><article className="drill-workspace"><span>SCENARIO {drillIndex+1}</span><h2>{activeDrill.title}</h2><p className="drill-stem">{activeDrill.stem}</p><div className="drill-options">{activeDrill.options.map(option => <button className={drillAnswers[activeDrill.id] === option ? "selected" : ""} onClick={() => setDrillAnswers({...drillAnswers,[activeDrill.id]:option})} key={option}>{option}</button>)}</div><label><span>证据理由</span><textarea value={drillRationales[activeDrill.id] ?? ""} onChange={event => setDrillRationales({...drillRationales,[activeDrill.id]:event.target.value})} placeholder="说明适用条件、强度、数据质量与可能反证（至少20字）……"/></label><button className="primary" disabled={!drillAnswers[activeDrill.id] || (drillRationales[activeDrill.id] ?? "").length < 20} onClick={completeDrill}>提交并揭示</button>{drillCompleted.includes(activeDrill.id) && <Feedback ok={activeDrill.expected.includes(drillAnswers[activeDrill.id])}>{activeDrill.explanation}<br/>高风险误区：{activeDrill.risk}</Feedback>}</article></section>
             <section className="revision-map"><h2>ClinGen通用修订地图</h2><div><article><b>人群</b><p>BA1例外列表；PM2降为支持；gnomAD v4使用指导。</p></article><article><b>机制与剪接</b><p>PVS1决策树；PVS1/PS1/PP3/BP4/BP7剪接框架。</p></article><article><b>病例与家系</b><p>PS2/PM6计点；PM3反式计点；PP1/BS4与PP4。</p></article><article><b>功能与计算</b><p>PS3/BS3实验质量；PP3/BP4工具校准。</p></article><article><b>来源型证据</b><p>PP5/BP6不建议使用，应回溯底层证据。</p></article><article><b>分类框架</b><p>强度改名规范；贝叶斯模型；自然尺度计分系统。</p></article></div></section>
             <div className="sources-panel"><h2>主版本与原始来源</h2><ul><li><a href="https://www.acmg.net/docs/standards_guidelines_for_the_interpretation_of_sequence_variants.pdf" target="_blank" rel="noreferrer">ACMG/AMP序列变异解读指南（2015，原始28条标准及组合表）</a></li><li><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">ClinGen Variant Classification Guidance（页面标注最后更新：2025-07）</a></li><li><a href="https://www.clinicalgenome.org/curation-activities/variant-pathogenicity/documents/" target="_blank" rel="noreferrer">ClinGen变异致病性文件与VCEP规范</a></li><li><a href="https://varnomen.hgvs.org/" target="_blank" rel="noreferrer">HGVS Nomenclature Recommendations</a></li></ul><p>本页是教学用工作手册，不替代实验室SOP或基因/疾病特异规范。动态资源须在每次真实解读时重新核查。</p></div>
@@ -659,7 +668,7 @@ export default function LearningWorkspace() {
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.4 学习闭环版</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.5 人工审核与证据强度版</span></footer>
     </div>
   );
 }
@@ -761,24 +770,4 @@ function gradeReport(template: (typeof reportTemplates)[number], draft: string) 
     return { label, met, score: met ? weights[index] : 0, hint: met ? "已识别到必要信息" : `建议补充：${words.join(" / ")}` };
   });
   return { dimensions, total: dimensions.reduce((sum, item) => sum + item.score, 0) };
-}
-
-function classifyTraditional(codes: string[]) {
-  const has = (code: string) => codes.includes(code);
-  const pvs = codes.filter(code => code === "PVS1").length;
-  const ps = codes.filter(code => /^PS[1-4]$/.test(code)).length;
-  const pm = codes.filter(code => /^PM[1-6]$/.test(code) && code !== "PM2").length;
-  const pp = codes.filter(code => /^PP[1-4]$/.test(code)).length + (has("PM2") ? 1 : 0);
-  const bs = codes.filter(code => /^BS[1-4]$/.test(code)).length;
-  const bp = codes.filter(code => /^BP[1-5]$|^BP7$/.test(code)).length;
-  const pathogenicEvidence = pvs + ps + pm + pp > 0;
-  const benignEvidence = has("BA1") || bs + bp > 0;
-  if (pathogenicEvidence && benignEvidence) return { label:"意义未明 / 冲突", reason:"同时存在致病与良性证据，必须先解决冲突、适用性和证据独立性。", tone:"vus" };
-  if (has("BA1") || bs >= 2) return { label:"良性", reason:has("BA1") ? "满足BA1独立良性证据。" : "满足至少2条良性强证据。", tone:"benign" };
-  if ((bs >= 1 && bp >= 1) || bp >= 2) return { label:"可能良性", reason:"满足传统表5的可能良性组合。", tone:"likely-benign" };
-  const pathogenic = (pvs >= 1 && (ps >= 1 || pm >= 2 || (pm >= 1 && pp >= 1) || pp >= 2)) || ps >= 2 || (ps >= 1 && (pm >= 3 || (pm >= 2 && pp >= 2) || (pm >= 1 && pp >= 4)));
-  if (pathogenic) return { label:"致病", reason:"满足传统ACMG/AMP表5的致病组合。仍需确认每条证据独立且适用。", tone:"pathogenic" };
-  const likely = (pvs >= 1 && pm >= 1) || (ps >= 1 && pm >= 1) || (ps >= 1 && pp >= 2) || pm >= 3 || (pm >= 2 && pp >= 2) || (pm >= 1 && pp >= 4);
-  if (likely) return { label:"可能致病", reason:"满足传统ACMG/AMP表5的可能致病组合。", tone:"likely-pathogenic" };
-  return { label:codes.length ? "意义未明" : "尚未加入证据", reason:codes.length ? "当前组合尚未达到致病、可能致病、良性或可能良性的组合阈值。" : "从右侧选择证据代码开始练习。", tone:"vus" };
 }

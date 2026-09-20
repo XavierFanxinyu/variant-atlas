@@ -1,4 +1,5 @@
 import { normalizeProgress } from "./progress-model";
+import { automationExercises } from "./automation-review-data";
 import { evidenceDrills, examBanks } from "./learning-content";
 import { wgsCases, wgsExamBanks } from "./wgs-content";
 import { flagshipCases } from "./flagship-cases";
@@ -33,6 +34,8 @@ export function collectReviewItems(storage: Storage): ReviewItem[] {
     result.push({ id, group, title, prompt, options: q.options, answer: q.answer, selected, rationale: q.rationale, signature: reviewSignature([selected, q.answer, q.rationale]) });
   };
   const coreResponses = object(core.examResponses);
+  const automation = read(storage, "variant-atlas-automation-v1");
+  for (const item of automationExercises) addQuestion(`automation:${item.id}`, "人工审核", item.title, item, `${item.output}\n${item.reveal}\n${item.q}`, object(automation.submitted)[item.id]);
   for (const [level, questions] of Object.entries(examBanks)) for (const question of questions) addQuestion(`core:${question.id}`, "核心测验", `${level} · ${question.tag}`, question, question.q, coreResponses[question.id]);
   // v1.3 kept topics only; retain them transparently without inventing the original answer.
   const coveredTopics = new Set(Object.values(examBanks).flat().filter(question => Object.hasOwn(coreResponses, question.id)).map(question => question.tag));
