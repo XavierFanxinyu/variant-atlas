@@ -1,7 +1,7 @@
 import { coreCaseIds, normalizeProgress, progressKeys, workflowIds } from "./progress-model";
 import { evidenceDrills } from "./learning-content";
 
-export const LEARNING_RECORD_SCHEMA = 6;
+export const LEARNING_RECORD_SCHEMA = 7;
 export const LEARNING_RECORD_EVENT = "variant-atlas-progress-updated";
 export const LEARNING_REPLACED_EVENT = "variant-atlas-progress-replaced";
 export const STORAGE_ERROR_EVENT = "variant-atlas-storage-error";

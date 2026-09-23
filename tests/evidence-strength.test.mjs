@@ -73,7 +73,7 @@ test("review training and PM3 input surface render without a browser or login", 
   const Review=loadTypescript("app/automation-review.tsx").default;
   const Calculator=loadTypescript("app/evidence-strength-panel.tsx").PM3Calculator;
   const html=renderToStaticMarkup(createElement(Review,{onEvidence:()=>{},onReview:()=>{}}));
-  assert.match(html,/人工承担可追溯的判断/); assert.match(html,/不是完整真实病例/);
+  assert.match(html,/人工承担可追溯的判断/); assert.match(html,/不纳入完整真实病例数量/);
   assert.match(html,/第二步 · 展开原文事实/); assert.doesNotMatch(html,/第三步 · 逐条审核/);
   const pm3=renderToStaticMarkup(createElement(Calculator));
   assert.match(pm3,/待确认适用范围/); assert.match(pm3,/添加独立观察/);
