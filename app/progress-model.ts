@@ -6,6 +6,7 @@ import { wgsCases, wgsModules, wgsExamBanks } from "./wgs-content";
 import { automationExercises } from "./automation-review-data";
 import { evidencePackets, packetItemIds } from "./evidence-packets-data";
 import { pvs1Questions } from "./pvs1-model";
+import { functionalChecks, rnaChecks } from "./functional-rna-model";
 
 export const coreLessonIds = ["phenotype", "quality", "hgvs", "acmg", "case-level", "report", ...supplementalLessons.map(item => item.id)];
 export const coreCaseIds = Array.from({ length: 8 }, (_, index) => String(index + 1).padStart(3, "0"));
@@ -53,6 +54,8 @@ const packetDecisions = (submitted: boolean): Parser => value => Object.fromEntr
   return [id, shape({ action: integer(3, submitted ? 0 : -1), strength: choice([...(submitted ? [] : [""]), ...definition.strengths]), note: str })(record)];
 }));
 const schemas: Record<string, Parser> = {
+  "variant-atlas-functional-v1": shape({ source: str, record: str, odds: str, direction: choice(["unknown", "abnormal", "normal", "indeterminate"]), checks: ids(functionalChecks.map(([key]) => key)), conflict: bool }),
+  "variant-atlas-rna-v1": shape({ source: str, record: str, material: choice(["unknown", "patient", "minigene", "other"]), outcome: choice(["unknown", "abnormal", "normal", "complex"]), variant: choice(["unknown", "silent-intronic", "protein-altering"]), lof: bool, checks: ids(rnaChecks.map(([key]) => key)) }),
   "variant-atlas-denovo-v1": shape({ scope: bool, rows: list(shape({ family: str, source: str, parentage: choice(["unknown", "confirmed", "assumed"]), parentsNegative: bool, phenotype: choice(["inconsistent", "specific", "consistent", "heterogeneous"]), verified: bool, special: bool }), 30) }),
   "variant-atlas-segregation-v1": shape({ scope: bool, mode: choice(["AD", "AR", "XLR"]), yieldPercent: str, yieldSource: str, yieldVerified: bool, homogeneous: bool, fullyPenetrant: bool, complex: bool, variants: value => value === undefined ? "1" : str(value), rows: list(shape({ person: str, source: str, affected: bool, verified: bool }), 30) }),
   "variant-atlas-pvs1-v1": shape({ record: str, answers: value => Object.fromEntries(Object.entries(object(value)).map(([id, answer]) => { const question = pvs1Questions.find(item => item.id === id); if (!question) fail(); return [id, choice(question!.options.map(option => option[0]))(answer)]; })) }),

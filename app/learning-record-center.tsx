@@ -56,7 +56,7 @@ export default function LearningRecordCenter() {
   }
 
   return <section className="record-center page-section">
-    <div className="section-heading"><div><span>LOCAL LEARNING PASSPORT · V6 · 兼容V1–V5备份</span><h1>统一学习档案</h1></div><p>课程、病例、测验、工作流、报告草稿、人工审核、公开证据包、PM3/新发/共分离练习和PVS1路径保存在当前浏览器中，可统一备份。网站不上传患者资料，也不要求注册账号；新练习不改变既有认证条件。</p></div>
+    <div className="section-heading"><div><span>LOCAL LEARNING PASSPORT · V7 · 兼容V1–V6备份</span><h1>统一学习档案</h1></div><p>课程、病例、测验、工作流、报告草稿、人工审核、公开证据包、PM3/新发/共分离练习、PVS1路径及功能/RNA审核底稿保存在当前浏览器中，可统一备份。网站不上传患者资料，也不要求注册账号；新练习不改变既有认证条件。</p></div>
     <div className="record-privacy"><b>本地优先</b><p>进度保存在此设备的浏览器中。更换设备或清理浏览器前请导出备份。导入会检查版本、章节和成绩格式，并在你确认后替换全部学习记录。</p></div>
     <div className="record-metrics">
       <article><span>核心课程</span><strong>{summary.coreLessons}<small>/24</small></strong></article>

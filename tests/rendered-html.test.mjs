@@ -127,7 +127,7 @@ test("provides a versioned local learning archive with safe import and reset", a
   const record = await readFile(new URL("../app/learning-record.ts", import.meta.url), "utf8");
   const center = await readFile(new URL("../app/learning-record-center.tsx", import.meta.url), "utf8");
 
-  for (const symbol of ["LEARNING_RECORD_SCHEMA = 6", "ensureLearningSchema", "exportLearningArchive", "validateLearningArchive", "importLearningArchive", "resetLearningArchive", "summarizeLearning"]) {
+  for (const symbol of ["LEARNING_RECORD_SCHEMA = 7", "ensureLearningSchema", "exportLearningArchive", "validateLearningArchive", "importLearningArchive", "resetLearningArchive", "summarizeLearning"]) {
     assert.match(record, new RegExp(symbol));
   }
   assert.match(record, /startsWith\("variant-atlas-"\)/);

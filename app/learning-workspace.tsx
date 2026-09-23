@@ -485,7 +485,7 @@ export default function LearningWorkspace() {
         {view === "rules" && (
           <section className="evidence-page">
             <div className="evidence-hero"><div><span className="eyebrow">EVIDENCE HANDBOOK · 28 CRITERIA</span><h1>证据规则工作手册</h1><p>左侧保留2015年ACMG/AMP原始框架，右侧标注ClinGen现行通用细化。真正解读时，适用的基因/疾病VCEP规范优先于这里的通用提示。</p></div><div className="evidence-counts"><span><b>16</b>致病证据</span><span><b>12</b>良性证据</span><span><b>11</b>ClinGen通用细化主题</span></div></div>
-            <div className="evidence-alert"><b>使用顺序</b><p>确认基因—疾病—遗传模式 → 查找VCEP特异规范 → 应用ClinGen通用建议 → 回到ACMG/AMP组合规则 → 记录版本、来源与反证。<br /><a href="#evidence-labs">直接打开计分练习与PVS1决策树 ↓</a></p><button onClick={() => navigate("sop")}>打开完整SOP工作流 →</button></div>
+            <div className="evidence-alert"><b>使用顺序</b><p>确认基因—疾病—遗传模式 → 查找VCEP特异规范 → 应用ClinGen通用建议 → 回到ACMG/AMP组合规则 → 记录版本、来源与反证。<br /><a href="#evidence-labs">打开计分、决策树与功能/RNA审核 ↓</a></p><button onClick={() => navigate("sop")}>打开完整SOP工作流 →</button></div>
             <div className="rule-toolbar">
               <label><span>检索</span><input value={ruleSearch} onChange={(event) => setRuleSearch(event.target.value)} placeholder="代码、名称或关键词" /></label>
               <div><span>方向</span>{["全部","致病","良性"].map(item => <button className={ruleDirection === item ? "active" : ""} onClick={() => setRuleDirection(item)} key={item}>{item}</button>)}</div>
@@ -504,7 +504,7 @@ export default function LearningWorkspace() {
                 <div className="detail-actions"><button className="secondary" onClick={() => navigate("case")}>在病例中练习</button><a href="https://www.clinicalgenome.org/tools/clingen-variant-classification-guidance/" target="_blank" rel="noreferrer">打开ClinGen现行汇总 ↗</a></div>
               </article> : <article className="rule-detail rule-empty"><span>未找到匹配规则</span><h1>换一个关键词或筛选条件</h1><p>可以检索代码（如PVS1）、证据名称、适用条件或高风险误用。</p><button className="secondary" onClick={() => {setRuleSearch("");setRuleDirection("全部");setRuleDomain("全部")}}>清除筛选</button></article>}
             </div>
-            <div className="strength-entry"><h2>从自动命中到人工确认</h2><p>28条规则均有强度调整路径；没有通用阈值的条目明确转向适用VCEP。下方可切换PM3、新发、PP1/PP4和PVS1训练；独立计算，不自动修改2015组合台。</p><button className="secondary" onClick={() => navigate("automation")}>练习公开证据包人工审核</button></div>
+            <div className="strength-entry"><h2>从自动命中到人工确认</h2><p>28条规则均有强度调整路径；没有通用阈值的条目明确转向适用VCEP。下方可切换PM3、新发、PP1/PP4、PVS1及功能/RNA审核；独立训练，不自动修改2015组合台。</p><button className="secondary" onClick={() => navigate("automation")}>练习公开证据包人工审核</button></div>
             <EvidenceLabs />
             <section className="combination-panel"><div><span className="eyebrow">COMBINATION RULES</span><h2>五级分类组合速查</h2><p>这是ACMG/AMP 2015表5的压缩提示。采用强度调整、VCEP规范或贝叶斯/计分化框架时，应使用对应规范的完整组合方法。</p></div><div>{combinationRows.map(([label, body]) => <article key={label}><b>{label}</b><p>{body}</p></article>)}</div></section>
             <section className="evidence-workbench"><div className="workbench-intro"><span className="eyebrow">COMBINATION PRACTICE</span><h2>证据组合练习台</h2><p>本台采用2015表5，加上ClinGen PM2 v1.0的支持级及“极强＋支持→可能致病”扩展。按钮显示本台实际采用的强度，不随上方细则自动升降级。仍需独立审核每条证据的适用性和依赖，不能把计算结果直接用于真实报告。</p><div className={`workbench-result ${workbenchResult.tone}`}><span>当前结果</span><strong>{workbenchResult.label}</strong><p>{workbenchResult.reason}</p></div><button onClick={() => setWorkbench([])}>清空组合</button></div><div className="workbench-codes">{evidenceRules.map(rule => <button className={`${workbench.includes(rule.code) ? "selected" : ""} ${rule.direction === "致病" ? "pathogenic" : "benign"}`} disabled={rule.status === "不建议使用"} onClick={() => setWorkbench(workbench.includes(rule.code) ? workbench.filter(code => code !== rule.code) : [...workbench, rule.code])} key={rule.code}><b>{rule.code}</b><span>{workbenchStrength(rule.code)}</span></button>)}</div></section>
@@ -669,7 +669,7 @@ export default function LearningWorkspace() {
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.6 证据训练与公开审核版</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.7 功能与RNA证据审核版</span></footer>
     </div>
   );
 }

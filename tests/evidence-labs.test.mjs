@@ -94,7 +94,7 @@ test("all new progress modules roundtrip, reject corruption and retain earlier s
   assert.throws(() => normalizeProgress("variant-atlas-pvs1-v1", { answers: { nmd: "always" } }));
   assert.throws(() => normalizeProgress("variant-atlas-pvs1-v1", { answers: { injected: "yes" } }));
   const { validateLearningArchive } = loadTypescript("app/learning-record.ts");
-  for (let schemaVersion = 1; schemaVersion <= 6; schemaVersion++) assert.doesNotThrow(() => validateLearningArchive({ product: "Variant Atlas", schemaVersion, exportedAt: "2026-09-21T00:00:00.000Z", records: { "variant-atlas-demo": {} } }));
+  for (let schemaVersion = 1; schemaVersion <= 7; schemaVersion++) assert.doesNotThrow(() => validateLearningArchive({ product: "Variant Atlas", schemaVersion, exportedAt: "2026-09-21T00:00:00.000Z", records: { "variant-atlas-demo": {} } }));
 });
 test("packets distinguish decisions and strengths, freeze snapshots and feed review", () => {
   const note = "依据公开原文逐项审核计分、强度与资料边界，并记录所需补充证据。";

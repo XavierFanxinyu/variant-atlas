@@ -4,6 +4,7 @@ import { PM3Calculator } from "./evidence-strength-panel";
 import { calculateDeNovo, calculateSegregation, emptyDeNovo, emptySegregation, labReviewedAt, labSources, phenotypeLabels, type DeNovoRow, type SegregationInput } from "./evidence-lab-model";
 import { pvs1Questions, pvs1Route, setPVS1Answer, type PVS1Answers } from "./pvs1-model";
 import { useProgressPersistence } from "./use-progress-persistence";
+import { FunctionalLab, RNALab } from "./functional-rna-labs";
 
 function Sources({ kind }: { kind: keyof typeof labSources }) {
   return <div className="strength-sources"><a target="_blank" rel="noreferrer" href={labSources[kind]}>原始建议与表格 ↗</a><a target="_blank" rel="noreferrer" href={labSources.cspec}>核查基因–疾病特异规范 ↗</a><span>本模块核查 {labReviewedAt}</span></div>;
@@ -68,5 +69,5 @@ export function PVS1Lab() {
 
 export default function EvidenceLabs() {
   const [tab, setTab] = useState("pm3");
-  return <section id="evidence-labs" className="evidence-labs" aria-labelledby="evidence-labs-title"><h2 id="evidence-labs-title">证据训练工作区</h2><div className="lab-tabs" role="group" aria-label="切换证据训练">{[["pm3", "PM3 反式"], ["denovo", "PS2 / PM6 新发"], ["segregation", "PP1 / PP4 联合"], ["pvs1", "PVS1 决策树"]].map(([id, label]) => <button className={tab === id ? "active" : ""} aria-pressed={tab === id} key={id} onClick={() => setTab(id)}>{label}</button>)}</div>{tab === "pm3" ? <PM3Calculator /> : tab === "denovo" ? <DeNovoLab /> : tab === "segregation" ? <SegregationLab /> : <PVS1Lab />}</section>;
+  return <section id="evidence-labs" className="evidence-labs" aria-labelledby="evidence-labs-title"><h2 id="evidence-labs-title">证据训练工作区</h2><div className="lab-tabs" role="group" aria-label="切换证据训练">{[["pm3", "PM3 反式"], ["denovo", "PS2 / PM6 新发"], ["segregation", "PP1 / PP4 联合"], ["pvs1", "PVS1 决策树"], ["functional", "PS3 / BS3 功能实验"], ["rna", "RNA 剪接审核"]].map(([id, label]) => <button className={tab === id ? "active" : ""} aria-pressed={tab === id} key={id} onClick={() => setTab(id)}>{label}</button>)}</div>{tab === "pm3" ? <PM3Calculator /> : tab === "denovo" ? <DeNovoLab /> : tab === "segregation" ? <SegregationLab /> : tab === "pvs1" ? <PVS1Lab /> : tab === "functional" ? <FunctionalLab /> : <RNALab />}</section>;
 }
