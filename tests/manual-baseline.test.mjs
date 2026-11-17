@@ -22,7 +22,7 @@ test("manual integration distinguishes baseline, unconverted training and source
   assert.doesNotMatch(source, /allow-same-origin|dangerouslySetInnerHTML/);
 });
 // Run only the inspected pure grading function, not the document's UI script.
-const gradeText = html.match(/function grade\(score, nPath, nBenign, hasBA1\)\{([\s\S]*?)\r?\n  function renderCalc/)[0].replace(/\r?\n  function renderCalc$/, "");
+const gradeText = html.match(/function grade\(score, nPath, nBenign, hasBA1\)\{([\s\S]*?)\r?\n {2}function renderCalc/)[0].replace(/\r?\n {2}function renderCalc$/, "");
 const grade = runInNewContext(`(${gradeText})`, Object.create(null), {timeout: 1000});
 test("manual grade boundaries and same-direction minimum are preserved", () => {
   for (const [score,p,b,expected] of [[10,2,0,"Pathogenic（P）"],[9,2,0,"Likely Pathogenic（LP）"],[6,2,0,"Likely Pathogenic（LP）"],[5,2,0,"VUS"],[0,2,2,"VUS"],[-1,0,2,"Likely benign（LB）"],[-6,0,2,"Likely benign（LB）"],[-7,0,2,"Benign（B）"],[8,1,0,"VUS"],[-8,0,1,"VUS"],[6,1,2,"VUS"],[-6,2,1,"VUS"]]) assert.equal(grade(score,p,b,false).label,expected);

@@ -17,7 +17,7 @@ export default function ManualBaseline() {
       <li>PM2：速判“任一数据库”与完整规则中的“均”存在措辞差异，不据此自动判定人群频率证据。</li>
       <li>BA1例外表未注明参考基因组版本，不能默认按GRCh38坐标直接匹配。原文参考文献编号未附完整书目，逐条追溯仍待补齐。</li>
     </ul></details>
-    <p><a href="/acmg-manual-v18.html" target="_blank" rel="noreferrer">独立窗口打开完整手册 ↗</a>　<a href="/acmg-manual-v18.html" download>下载原始HTML</a></p>
+    <p><a href="/acmg-manual-v18.html" target="_blank" rel="noreferrer">独立窗口打开完整手册 ↗</a> · <a href="/acmg-manual-v18.html" download>下载原始HTML</a></p>
     <p>内嵌手册隔离运行，不能读取网站学习档案；主题偏好可能无法保存，临时计算不纳入学习成绩。切换页面会清空手册内临时计算，请自行留底稿。</p>
     <button className="primary" onClick={() => setOpened(value => !value)} aria-expanded={opened}>{opened ? "收起手册（清空临时计算）" : "在本页展开完整手册"}</button>
     {opened && <iframe title="用户提供的ACMG规则速查手册" src="/acmg-manual-v18.html" sandbox="allow-scripts allow-popups allow-modals allow-downloads" referrerPolicy="no-referrer" style={{width:"100%",height:"80vh",minHeight:600,border:"1px solid #ddd",borderRadius:12,marginTop:20}} />}
