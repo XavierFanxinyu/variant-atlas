@@ -9,6 +9,7 @@ import ReviewCenter from "./review-center";
 import AutomationReview from "./automation-review";
 import EvidenceStrengthPanel from "./evidence-strength-panel";
 import EvidenceLabs from "./evidence-labs";
+import ManualBaseline from "./manual-baseline";
 import { classifyTraditional, workbenchStrength } from "./evidence-combination";
 import { useProgressPersistence } from "./use-progress-persistence";
 import ReportLab from "./report-lab";
@@ -188,6 +189,7 @@ const pahSteps = ["筛查与复核", "鉴别诊断", "遗传模式", "双变异�
 const emptyPahAnswer: PahAnswer = { inheritance: "", phase: "", variant1Class: "", variant2Class: "", rationale1: "", rationale2: "", conclusion: "", report: "" };
 
 export default function LearningWorkspace() {
+  const [legacyRules, setLegacyRules] = useState(false);
   const [view, setView] = useState<View>("dashboard");
   const [step, setStep] = useState(0);
   const [checked, setChecked] = useState(false);
@@ -355,7 +357,7 @@ export default function LearningWorkspace() {
         <nav aria-label="主导航">
           <button className={view === "dashboard" ? "active" : ""} onClick={() => navigate("dashboard")}>学习台</button>
           <button className={view === "courses" ? "active" : ""} onClick={() => navigate("courses")}>课程</button>
-          <button className={view === "rules" ? "active" : ""} onClick={() => navigate("rules")}>证据规则</button>
+          <button className={view === "rules" ? "active" : ""} onClick={() => {setLegacyRules(false); navigate("rules");}}>证据规则</button>
           <button className={view === "automation" ? "active" : ""} onClick={() => navigate("automation")}>人工审核</button>
           <button className={view === "sop" ? "active" : ""} onClick={() => navigate("sop")}>SOP工作流</button>
           <button className={view === "guidelines" ? "active" : ""} onClick={() => navigate("guidelines")}>规范更新</button>
@@ -368,6 +370,7 @@ export default function LearningWorkspace() {
       </header>
 
       <main>
+        <aside className="strength-result"><strong>v1.8 学习规则基准：用户速查手册</strong><p>旧课程、病例与测验保留原来源和历史评分，尚未逐题迁移，不与新手册混算。</p><button className="secondary" onClick={() => {setLegacyRules(false); navigate("rules");}}>查看本轮规则基准</button></aside>
         {view === "dashboard" && (
           <>
             <section className="hero-grid">
@@ -480,9 +483,10 @@ export default function LearningWorkspace() {
           </section>
         )}
 
-        {view === "automation" && <AutomationReview onEvidence={code => { setSelectedRule(code); setRuleSearch(""); setRuleDirection("全部"); setRuleDomain("全部"); navigate("rules"); }} onReview={() => navigate("mistakes")} />}
+        {view === "automation" && <AutomationReview onEvidence={code => { setLegacyRules(true); setSelectedRule(code); setRuleSearch(""); setRuleDirection("全部"); setRuleDomain("全部"); navigate("rules"); }} onReview={() => navigate("mistakes")} />}
 
-        {view === "rules" && (
+        {view === "rules" && <><div className="lab-tabs" role="group" aria-label="规则版本"><button aria-pressed={!legacyRules} onClick={() => setLegacyRules(false)}>本轮基准：用户手册</button><button aria-pressed={legacyRules} onClick={() => setLegacyRules(true)}>历史参考：v1.7规则与练习</button></div>{!legacyRules && <ManualBaseline />}{legacyRules && <p className="strength-warning">历史参考模式：以下计算器及练习沿用其原始规范，不代表本轮手册规则；结果不可直接混用。</p>}</>}
+        {view === "rules" && legacyRules && (
           <section className="evidence-page">
             <div className="evidence-hero"><div><span className="eyebrow">EVIDENCE HANDBOOK · 28 CRITERIA</span><h1>证据规则工作手册</h1><p>左侧保留2015年ACMG/AMP原始框架，右侧标注ClinGen现行通用细化。真正解读时，适用的基因/疾病VCEP规范优先于这里的通用提示。</p></div><div className="evidence-counts"><span><b>16</b>致病证据</span><span><b>12</b>良性证据</span><span><b>11</b>ClinGen通用细化主题</span></div></div>
             <div className="evidence-alert"><b>使用顺序</b><p>确认基因—疾病—遗传模式 → 查找VCEP特异规范 → 应用ClinGen通用建议 → 回到ACMG/AMP组合规则 → 记录版本、来源与反证。<br /><a href="#evidence-labs">打开计分、决策树与功能/RNA审核 ↓</a></p><button onClick={() => navigate("sop")}>打开完整SOP工作流 →</button></div>
@@ -669,7 +673,7 @@ export default function LearningWorkspace() {
           </section>
         )}
       </main>
-      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>GRCh38 · v1.7 功能与RNA证据审核版</span></footer>
+      <footer><span>Variant Atlas · 教学用途</span><p>不接收真实患者信息，不替代临床诊断。医学结论须由合格专业人员复核。</p><span>v1.8 手册基准与版本隔离版</span></footer>
     </div>
   );
 }
